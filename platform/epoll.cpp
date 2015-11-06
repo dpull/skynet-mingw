@@ -16,7 +16,7 @@
    program is not LGPL-compatible!  You're better off using the DLL.
  */
 
-#include "cpoll.h"
+#include "epoll.h"
 
 #include <Winsock2.h>
 

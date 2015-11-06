@@ -66,7 +66,7 @@ SKYNET_SRC = skynet_handle.c skynet_module.c skynet_mq.c \
 $(SKYNET_BUILD_PATH)/platform.dll : platform/platform.c platform/epoll.cpp platform/socket_poll.c
 	g++ -g -O2 -Wall $(SHARED) $^ -lws2_32 -lwsock32 -o $@
 
-$(SKYNET_BUILD_PATH)/skynet.dll : $(foreach v, $(SKYNET_SRC), skynet-src/$(v)) | $(LUA_LIB)
+$(SKYNET_BUILD_PATH)/skynet.dll : $(foreach v, $(SKYNET_SRC), skynet-src/$(v)) | $(LUA_LIB) $(SKYNET_BUILD_PATH)/platform.dll
 	$(CC) -includeplatform.h $(CFLAGS) $(SHARED) -o $@ $^ -Iskynet-src $(LDFLAGS) $(SKYNET_LIBS) $(SKYNET_DEFINES)
 
 $(SKYNET_BUILD_PATH)/skynet.exe : $(foreach v, $(SKYNET_EXE_SRC), skynet-src/$(v))  | $(SKYNET_BUILD_PATH)/skynet.dll
