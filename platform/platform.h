@@ -1,14 +1,11 @@
-#pragma once
+#ifndef PLATFORM_H
+#define PLATFORM_H
 
 #include <unistd.h>
 #include <stdbool.h>
 #include "sys/socket.h"
 
 #define HAVE_STRUCT_TIMESPEC
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 struct sigaction {
 	void (*sa_handler)(int);
@@ -68,7 +65,6 @@ int send_extend_errno(SOCKET s, const char* buffer, int sz, int flag);
 int recv_extend_errno(SOCKET s, char* buffer, int sz, int flag);
 
 #ifndef DONOT_USE_IO_EXTEND
-#define DONOT_USE_IO_EXTEND
 #define write(fd, ptr, sz) write_extend_socket(fd, ptr, sz)
 #define read(fd, ptr, sz)  read_extend_socket(fd, ptr, sz)
 #define close(fd) close_extend_socket(fd)
@@ -80,6 +76,4 @@ int recv_extend_errno(SOCKET s, char* buffer, int sz, int flag);
 
 __declspec(dllimport) int __stdcall gethostname(char *buffer, int len);
 
-#ifdef __cplusplus
-}; /* extern "C" */
 #endif

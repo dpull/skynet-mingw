@@ -34,9 +34,6 @@ struct epoll_event {
     epoll_data_t data;
 };
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 /*
 Function:    int epoll_startup()
 Description: This function does necessary initialization for the epoll library.
@@ -66,17 +63,17 @@ Errors:
 int epoll_create(int size);
 
 /*
-Function:    int epoll_ctl(int cpfd, int opcode, int fd, struct epoll_event* event)
-Description: Control a epoll descriptor, cpfd, by requesting that the operation opcode
+Function:    int epoll_ctl(int epfd, int opcode, int fd, struct epoll_event* event)
+Description: Control a epoll descriptor, epfd, by requesting that the operation opcode
                be performed on the target file descriptor, fd. The event describes the
                object linked to the file descriptor fd.
              Returns zero on success, or -1 on error.
 */
-int epoll_ctl(int cpfd, int opcode, int fd, struct epoll_event* event);
+int epoll_ctl(int epfd, int opcode, int fd, struct epoll_event* event);
 
 /*
-Function:    int epoll_wait(int cpfd, struct epoll_event* events, int maxevents, int timeout)
-Description: Wait for events on the epoll file descriptor cpfd for a maximum time of timeout
+Function:    int epoll_wait(int epfd, struct epoll_event* events, int maxevents, int timeout)
+Description: Wait for events on the epoll file descriptor epfd for a maximum time of timeout
                milliseconds. The memory area pointed to by events will contain the events that
                will be available for the caller. Up to maxevents are returned. The maxevents
                parameter must be greater than zero. Specifying a timeout of -1 makes epoll_wait
@@ -85,10 +82,10 @@ Description: Wait for events on the epoll file descriptor cpfd for a maximum tim
              Returns the number of file descriptors ready for the requested I/O, zero if
                no file descriptor became ready before the requested timeout, or -1 on error.
 */
-int epoll_wait(int cpfd, struct epoll_event* events, int maxevents, int timeout);
+int epoll_wait(int epfd, struct epoll_event* events, int maxevents, int timeout);
 
 /*
-Function:    int epoll_close(int cpfd)
+Function:    int epoll_close(int epfd)
 Description: Takes a epoll file descriptor to close.
              Returns zero on success, or nonzero on error.
              Failure to close a epoll file descriptor may result in memory leaks
@@ -97,7 +94,7 @@ Description: Takes a epoll file descriptor to close.
                To maintain portability, epoll_close must always be used for anything created
                with epoll_create.
 */
-int epoll_close(int cpfd);
+int epoll_close(int epfd);
 
 /*
 Function:    void epoll_cleanup()
@@ -106,10 +103,6 @@ Description: This function does necessary cleanup for the epoll library.
              Applications should call this function exactly once before closing.
 */
 void epoll_cleanup();
-
-#ifdef __cplusplus
-}; /* extern "C" */
-#endif
 
 #endif /* EPOLL_H */
 

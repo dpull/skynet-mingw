@@ -5,5 +5,4 @@
 #include <WS2tcpip.h>
 
 #define EINPROGRESS WSAEWOULDBLOCK
-
 #undef near

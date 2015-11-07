@@ -9,13 +9,13 @@
 #define IN6ADDRSZ 16 
 #define INT16SZ 2
 
-extern "C" BOOL APIENTRY DllMain( HANDLE hModule, DWORD  ul_reason_for_call,  LPVOID lpReserved) {
-  switch (ul_reason_for_call)
-  {
-  case DLL_PROCESS_ATTACH:
+BOOL APIENTRY DllMain( HANDLE hModule, DWORD  ul_reason_for_call,  LPVOID lpReserved) {
+  switch (ul_reason_for_call) {
+  case DLL_PROCESS_ATTACH: {
     WSADATA wsadata;
     WSAStartup(MAKEWORD(2, 2), &wsadata);
-    break;
+  }
+  break;
 
   case DLL_PROCESS_DETACH:
     WSACleanup();
@@ -66,30 +66,27 @@ const char * inet_ntop(int af, const void *src, char *dst, size_t size) {
 
   if (af == AF_INET)
   {
-    address_length = sizeof(sockaddr_in);
-    sockaddr_in* ipv4_address = (sockaddr_in*)(&address);
+    address_length = sizeof(struct sockaddr_in);
+    struct sockaddr_in* ipv4_address = (struct sockaddr_in*)(&address);
     ipv4_address->sin_family = AF_INET;
     ipv4_address->sin_port = 0;
-    memcpy(&ipv4_address->sin_addr, src, sizeof(in_addr));
+    memcpy(&ipv4_address->sin_addr, src, sizeof(struct in_addr));
   }
   else // AF_INET6
   {
-    address_length = sizeof(sockaddr_in6);
-    sockaddr_in6* ipv6_address = (sockaddr_in6*)(&address);
+    address_length = sizeof(struct sockaddr_in6);
+    struct sockaddr_in6* ipv6_address = (struct sockaddr_in6*)(&address);
     ipv6_address->sin6_family = AF_INET6;
     ipv6_address->sin6_port = 0;
     ipv6_address->sin6_flowinfo = 0;
     // hmmm
     ipv6_address->sin6_scope_id = 0;
-    memcpy(&ipv6_address->sin6_addr, src, sizeof(in6_addr));
+    memcpy(&ipv6_address->sin6_addr, src, sizeof(struct in6_addr));
   }
 
   DWORD string_length = (DWORD)(size);
   int result;
-  result = WSAAddressToStringA((sockaddr*)(&address),
-                 address_length, 0, dst,
-                 &string_length);
-
+  result = WSAAddressToStringA((struct sockaddr*)(&address), address_length, 0, dst, &string_length);
   // one common reason for this to fail is that ipv6 is not installed
 
   return result == SOCKET_ERROR ? NULL : dst;
