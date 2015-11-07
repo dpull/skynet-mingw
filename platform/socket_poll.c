@@ -15,20 +15,20 @@ sp_invalid(int efd) {
 
 int
 sp_create() {
-	return cpoll_create(1024);
+	return epoll_create(1024);
 }
 
 void
 sp_release(int efd) {
-	close(efd);
+	closesocket(efd);
 }
 
 int 
 sp_add(int efd, int sock, void *ud) {
-	struct cpoll_event ev;
-	ev.events = CPOLLIN;
+	struct epoll_event ev;
+	ev.events = EPOLLIN;
 	ev.data.ptr = ud;
-	if (cpoll_ctl(efd, CPOLL_CTL_ADD, sock, &ev) == -1) {
+	if (epoll_ctl(efd, EPOLL_CTL_ADD, sock, &ev) == -1) {
 		return 1;
 	}
 	return 0;
@@ -36,28 +36,28 @@ sp_add(int efd, int sock, void *ud) {
 
 void 
 sp_del(int efd, int sock) {
-	cpoll_ctl(efd, CPOLL_CTL_DEL, sock , NULL);
+	epoll_ctl(efd, EPOLL_CTL_DEL, sock , NULL);
 }
 
 void 
 sp_write(int efd, int sock, void *ud, bool enable) {
-	struct cpoll_event ev;
-	ev.events = CPOLLIN | (enable ? CPOLLOUT : 0);
+	struct epoll_event ev;
+	ev.events = EPOLLIN | (enable ? EPOLLOUT : 0);
 	ev.data.ptr = ud;
-	cpoll_ctl(efd, CPOLL_CTL_MOD, sock, &ev);
+	epoll_ctl(efd, EPOLL_CTL_MOD, sock, &ev);
 }
 
 int 
 sp_wait(int efd, struct event *e, int max) {
 	assert(max <= 1024);
-	struct cpoll_event ev[1024];
-	int n = cpoll_wait(efd , ev, max, -1);
+	struct epoll_event ev[1024];
+	int n = epoll_wait(efd , ev, max, -1);
 	int i;
-	for (i=0;i<n;i++) {
+	for (i=0; i<n;i++) {
 		e[i].s = ev[i].data.ptr;
 		unsigned flag = ev[i].events;
-		e[i].write = (flag & CPOLLOUT) != 0;
-		e[i].read = (flag & CPOLLIN) != 0;
+		e[i].write = (flag & EPOLLOUT) != 0;
+		e[i].read = (flag & EPOLLIN) != 0;
 	}
 
 	return n;
@@ -69,58 +69,92 @@ sp_nonblocking(int fd) {
 	ioctlsocket(fd, FIONBIO, &ul);
 }
 
-int write(int fd, const void *ptr, size_t sz) {
-	if(fd == 1) {
-		fwrite(ptr, sz, 1, stdout);
-		return sz;
+int 
+write_extend_socket(int fd, const void *ptr, size_t sz) {
+	int ret = send(fd, (const char*)ptr, sz, 0);
+	if (ret == SOCKET_ERROR && WSAGetLastError() == WSAENOTSOCK) 
+		return write(fd, ptr, sz);
+	return ret;
+}
+
+int 
+read_extend_socket(int fd, void *buffer, size_t sz) {
+	int ret = recv(fd, (char*)buffer, sz, 0);
+	if (ret == SOCKET_ERROR && WSAGetLastError() == WSAENOTSOCK) 
+		return read(fd, buffer, sz);
+
+	if (ret == 0) {
+		printf("%d\n", WSAGetLastError());
 	}
-
-	if(fd == 2) {
-		fwrite(ptr, sz, 1, stderr);
-		return sz;
-	}	
-
-	WSABUF vecs[1];
-	vecs[0].buf = (char*)ptr;
-	vecs[0].len = sz;
-
-    DWORD bytesSent;
-    if(WSASend(fd, vecs, 1, &bytesSent, 0, NULL, NULL))
-        return -1;
-    else
-        return bytesSent;
+	return ret;
 }
 
-int read(int fd, void *buffer, size_t sz) {
-	if(fd == 0) {
-		char *buf = (char *) buffer;
-		while(_kbhit()) {
-			char ch = _getch();
-			*buf++ = ch;
-			_putch(ch);
-			if(ch == '\r') {
-				*buf++ = '\n';
-				_putch('\n');
-			}
-		}
-		return buf - (char *) buffer;
+void 
+close_extend_socket(int fd) {
+	int ret = closesocket(fd);
+	if (ret == SOCKET_ERROR && WSAGetLastError() == WSAENOTSOCK) 
+		close(fd);
+}
+
+int 
+pipe_socket(int fds[2]) {
+    struct sockaddr_in name;
+    int namelen = sizeof(name);
+    SOCKET server = INVALID_SOCKET;
+    SOCKET client1 = INVALID_SOCKET;
+    SOCKET client2 = INVALID_SOCKET;
+
+    memset(&name, 0, sizeof(name));
+    name.sin_family = AF_INET;
+    name.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+
+    server = socket(AF_INET, SOCK_STREAM, 0);
+    if (server == INVALID_SOCKET)
+        goto failed;
+
+    if (bind(server, (struct sockaddr*)&name, namelen) == SOCKET_ERROR) 
+        goto failed;
+
+    if (listen(server, 5) == SOCKET_ERROR)
+        goto failed;
+
+    if(getsockname(server, (struct sockaddr*)&name, &namelen) == SOCKET_ERROR)
+        goto failed;
+
+    client1 = socket(AF_INET, SOCK_STREAM, 0);
+    if (client1 == INVALID_SOCKET)
+        goto failed;
+
+    if (connect(client1, (struct sockaddr*)&name, namelen) == SOCKET_ERROR)
+        goto failed;
+
+    client2 = accept(server, (struct sockaddr*)&name, &namelen);
+    if (client2 == INVALID_SOCKET)
+        goto failed;
+
+    closesocket(server);
+    fds[0] = client1;
+    fds[1] = client2;
+    return 0;
+
+failed:
+    if (server != INVALID_SOCKET)
+        closesocket(server);
+
+    if (client1 != INVALID_SOCKET)
+        closesocket(client1);
+
+    if (client2 != INVALID_SOCKET)
+        closesocket(client2);
+    return -1;
+}
+
+int 
+connect_extend_errno(SOCKET s, const struct sockaddr* name, int namelen) {
+	int ret = connect(s, name, namelen);
+	if (ret == SOCKET_ERROR)  {
+		errno = WSAGetLastError();
 	}
-
-	WSABUF vecs[1];
-	vecs[0].buf = (char*)buffer;
-	vecs[0].len = sz;
-
-    DWORD bytesRecv = 0;
-    DWORD flags = 0;
-    if(WSARecv(fd, vecs, 1, &bytesRecv, &flags, NULL, NULL)) {
-		if(WSAGetLastError() == WSAECONNRESET)
-			return 0;
-        return -1;
-	} else
-        return bytesRecv;
+	return ret;
 }
 
-void close(int fd) {
-	shutdown(fd, SD_BOTH);
-	closesocket(fd);
-}

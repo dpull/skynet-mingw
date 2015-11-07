@@ -4,4 +4,6 @@
 #include <WinSock2.h>
 #include <WS2tcpip.h>
 
-#define EINPROGRESS WSAEINPROGRESS
+#define EINPROGRESS WSAEWOULDBLOCK
+
+#undef near

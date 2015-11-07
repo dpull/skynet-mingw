@@ -1,6 +1,6 @@
 LUA_CLIB_PATH ?= luaclib
 CSERVICE_PATH ?= cservice
-SKYNET_DEFINES :=-DNOUSE_JEMALLOC
+SKYNET_DEFINES :=-DNOUSE_JEMALLOC -DFD_SETSIZE=4096
 
 CC ?= gcc
 PLAT ?= mingw
@@ -19,7 +19,7 @@ CFLAGS := -g -O2 -w -I$(PLATFORM_INC) -I$(LUA_INC) $(MYCFLAGS)
 
 # link
 LDFLAGS := -llua53 -lplatform -lpthread -lws2_32 -L$(SKYNET_BUILD_PATH)
-SHARED := --shared
+SHARED := --shared -fno-builtin
 EXPORT := -Wl,-E
 SHAREDLDFLAGS := -llua53 -lskynet -lplatform -lws2_32 -L$(SKYNET_BUILD_PATH)
 
@@ -64,7 +64,7 @@ SKYNET_SRC = skynet_handle.c skynet_module.c skynet_mq.c \
   malloc_hook.c skynet_daemon.c skynet_log.c
 
 $(SKYNET_BUILD_PATH)/platform.dll : platform/platform.c platform/epoll.cpp platform/socket_poll.c
-	g++ -g -O2 -Wall $(SHARED) $^ -lws2_32 -lwsock32 -o $@
+	g++ -g -O2 -Wall $(SHARED) $^ -lws2_32 -lwsock32 -o $@ -DDONOT_USE_IO_EXTEND
 
 $(SKYNET_BUILD_PATH)/skynet.dll : $(foreach v, $(SKYNET_SRC), skynet-src/$(v)) | $(LUA_LIB) $(SKYNET_BUILD_PATH)/platform.dll
 	$(CC) -includeplatform.h $(CFLAGS) $(SHARED) -o $@ $^ -Iskynet-src $(LDFLAGS) $(SKYNET_LIBS) $(SKYNET_DEFINES)

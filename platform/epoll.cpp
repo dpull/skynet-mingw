@@ -1,21 +1,3 @@
-/*
-  cpoll - copyright 2009 by Dan "Heron" Myers (heronblademastr)
-  cpoll is released under the LGPL 3, which can be obtained at this
-    URL: http://www.gnu.org/copyleft/lesser.html
-  In Linux, cpoll transparently passes through to epoll; there should
-    be no performance impact.
-  In Windows, cpoll requires that you link with a DLL for the required
-    functionality (which is why it's LGPL, not GPL).
-  http://sourceforge.net/projects/cpoll/
-
- Usage:
- In Linux, do not use this file!  cpoll.h contains all you need.
- In Windows, inlude cpoll.h, and link with cpoll.lib.  Put cpoll.dll
-   in your program executable's directory.  You must #define WIN32.
-   Do not compile this file into your program, especially if your
-   program is not LGPL-compatible!  You're better off using the DLL.
- */
-
 #include "epoll.h"
 
 #include <Winsock2.h>
@@ -28,7 +10,7 @@
 struct fd_t
 {
     int fd;
-    struct cpoll_event event;
+    struct epoll_event event;
 	HANDLE wsa_event;
 
     fd_t() {
@@ -74,22 +56,22 @@ typedef std::vector<fd_t> cp_internal;
 int cp_next_id;
 std::map<int, cp_internal> cp_data;
 
-long get_wsa_mask(unsigned int cpoll_events)
+long get_wsa_mask(unsigned int epoll_events)
 {
     long mask = 0;
-    if(cpoll_events & CPOLLIN)
+    if(epoll_events & EPOLLIN)
         mask |= FD_READ;
-    if(cpoll_events & CPOLLOUT)
+    if(epoll_events & EPOLLOUT)
         mask |= FD_WRITE;
-    if(cpoll_events & CPOLLRDHUP)
+    if(epoll_events & EPOLLRDHUP)
         mask |= 0; // ??
-    if(cpoll_events & CPOLLPRI)
+    if(epoll_events & EPOLLPRI)
         mask |= 0; // ??
-    if(cpoll_events & CPOLLERR)
+    if(epoll_events & EPOLLERR)
         mask |= 0; // ??
-    if(cpoll_events & CPOLLHUP)
+    if(epoll_events & EPOLLHUP)
         mask |= FD_CLOSE;
-    if(cpoll_events & CPOLLET)
+    if(epoll_events & EPOLLET)
         mask |= 0; // ??
     return mask;
 }
@@ -98,15 +80,15 @@ unsigned int get_cp_mask(WSANETWORKEVENTS* wsa_events)
 {
     unsigned int mask = 0;
     if(wsa_events->lNetworkEvents & FD_READ)
-        mask |= CPOLLIN;
+        mask |= EPOLLIN;
     if(wsa_events->lNetworkEvents & FD_WRITE)
-        mask |= CPOLLOUT;
+        mask |= EPOLLOUT;
     if(wsa_events->lNetworkEvents & FD_CLOSE)
-        mask |= CPOLLHUP;
+        mask |= EPOLLHUP;
     return mask;
 }
 
-int cpoll_startup()
+int epoll_startup()
 {
     cp_next_id = 0;
 
@@ -123,7 +105,7 @@ Errors:
     ENOMEM
         There was insufficient memory to create the kernel object.
 */
-int cpoll_create(int size)
+int epoll_create(int size)
 {
 	GUARD();
     // maintaining error condition for compatibility
@@ -132,10 +114,6 @@ int cpoll_create(int size)
         return EINVAL;
 
     ++cp_next_id;
-
-    // ran out of ids!  wrapped around.
-    if(cp_next_id > (cp_next_id + 1))
-        cp_next_id = 0;
 
     while(cp_next_id < (cp_next_id + 1)) {
 
@@ -174,7 +152,7 @@ Errors:
     EPERM
         The target file fd does not support epoll.
 */
-int cpoll_ctl(int cpfd, int opcode, int fd, struct cpoll_event* event)
+int epoll_ctl(int cpfd, int opcode, int fd, struct epoll_event* event)
 {
 	GUARD();
     if(cpfd < 0 || cp_data.find(cpfd) == cp_data.end())
@@ -185,42 +163,39 @@ int cpoll_ctl(int cpfd, int opcode, int fd, struct cpoll_event* event)
 
     cp_internal& cpi = cp_data[cpfd];
 
-    if(opcode == CPOLL_CTL_ADD) {
-
+    if(opcode == EPOLL_CTL_ADD) {
         for(cp_internal::size_type i = 0; i < cpi.size(); ++i) { 
             if(cpi[i].fd == fd)
                 return EEXIST;
         }
 
+        if (cpi.size() >= 1024)
+            return ENOMEM;
+
         fd_t f;
 		f.fd = fd;
 		f.event = *event;
 		f.wsa_event = WSACreateEvent();
-        f.event.events |= CPOLLHUP;
-        f.event.events |= CPOLLERR;
+        f.event.events |= EPOLLHUP;
+        f.event.events |= EPOLLERR;
         WSAEventSelect(f.fd, f.wsa_event, FD_ACCEPT | FD_CLOSE | get_wsa_mask(f.event.events));
         cpi.push_back(f);
 		return 0;
     }
-    else if(opcode == CPOLL_CTL_MOD) {
-
+    else if(opcode == EPOLL_CTL_MOD) {
         for(cp_internal::size_type i = 0; i < cpi.size(); ++i) {
-
             if(cpi[i].fd == fd) {
-
                 cpi[i].event = *event;
-                cpi[i].event.events |= CPOLLHUP;
-                cpi[i].event.events |= CPOLLERR;
+                cpi[i].event.events |= EPOLLHUP;
+                cpi[i].event.events |= EPOLLERR;
 		        WSAEventSelect(cpi[i].fd, cpi[i].wsa_event, FD_ACCEPT | get_wsa_mask(cpi[i].event.events));
                 return 0;
             }
         }
         return ENOENT;
     }
-    else if(opcode == CPOLL_CTL_DEL) {
-
+    else if(opcode == EPOLL_CTL_DEL) {
 		for(cp_internal::iterator itr = cpi.begin(); itr != cpi.end(); ++itr) {
-
 			if(itr->fd == fd) {
 				// now unset the event notifications
 				WSAEventSelect(itr->fd, 0, 0);
@@ -235,7 +210,7 @@ int cpoll_ctl(int cpfd, int opcode, int fd, struct cpoll_event* event)
     return EINVAL;
 }
 
-int cpoll_wait(int cpfd, struct cpoll_event* events, int maxevents, int timeout)
+int epoll_wait(int cpfd, struct epoll_event* events, int maxevents, int timeout)
 {
 	GUARD();
     if(cpfd < 0 || cp_data.find(cpfd) == cp_data.end() || maxevents < 1)
@@ -244,34 +219,16 @@ int cpoll_wait(int cpfd, struct cpoll_event* events, int maxevents, int timeout)
 
     cp_internal& cpi = cp_data[cpfd];
 
-    WSAEVENT* wsa_events = new WSAEVENT[cpi.size()];
-    for(cp_internal::size_type i = 0; i < cpi.size(); ++i)
-        wsa_events[i] = cpi[i].wsa_event;
-
+    WSAEVENT wsa_events[1024];
 	int num_ready = 0;
 	DWORD wsa_result = 0;
 	for(;;) {
+        for(cp_internal::size_type i = 0; i < cpi.size(); ++i)
+            wsa_events[i] = cpi[i].wsa_event;
+
 		wsa_result = WSAWaitForMultipleEvents(cpi.size(), wsa_events, FALSE, 13, FALSE);
 		if(wsa_result != WSA_WAIT_TIMEOUT)
 			break;
-		if(_kbhit()) {
-			// console input handle
-			cpoll_event& ev = events[num_ready++];
-			ev.data.ptr = NULL;
-			ev.events = FD_READ;
-			for(int i = 0; i < cpi.size(); i++) {
-				if(cpi[i].fd == 0) {
-					ev.data.ptr = cpi[i].event.data.ptr;
-					break;
-				}
-			}
-			// if console service not startup, ignore this
-			if(ev.data.ptr == NULL) {
-				num_ready --;
-				continue;
-			}
-			break;
-		}
 	}
     if(wsa_result != WSA_WAIT_TIMEOUT) {
 
@@ -288,10 +245,10 @@ int cpoll_wait(int cpfd, struct cpoll_event* events, int maxevents, int timeout)
                 return -1;
 			}
 
-			cpoll_event& ev = events[num_ready++];
+			epoll_event& ev = events[num_ready++];
             if(ne.lNetworkEvents != 0) {
 
-                if(cpi[i].event.events & CPOLLONESHOT)
+                if(cpi[i].event.events & EPOLLONESHOT)
                     cpi[i].event.events = 0;
 
 				ev.events = (ne.lNetworkEvents & FD_ACCEPT) ? FD_CONNECT : 0;
@@ -309,7 +266,7 @@ int cpoll_wait(int cpfd, struct cpoll_event* events, int maxevents, int timeout)
     return num_ready;
 }
 
-int cpoll_close(int cpfd)
+int epoll_close(int cpfd)
 {
 	GUARD();
     if(cpfd < 1 || cp_data.find(cpfd) == cp_data.end())
@@ -327,11 +284,11 @@ int cpoll_close(int cpfd)
     return 0;
 }
 
-void cpoll_cleanup()
+void epoll_cleanup()
 {
 	GUARD();
     WSACleanup();
 	for(std::map<int, cp_internal>::iterator itr = cp_data.begin(); itr != cp_data.end(); ++itr)
-		cpoll_close(itr->first);
+		epoll_close(itr->first);
     cp_data.clear();
 }

@@ -57,54 +57,42 @@ int clock_gettime(int what, struct timespec *ti) {
    return 0;
 }
 
-static const char * inet_ntop_v4(const void *src, char *dst, size_t size) {
-  const char digits[] = "0123456789";
-  int i;
-  struct in_addr *addr = (struct in_addr *)src;
-  u_long a = ntohl(addr->s_addr);
-  const char *orig_dst = dst;
-
-  if (size < INET_ADDRSTRLEN) {
-    errno = ENOSPC;
-    return NULL;
-  }
-
-  for (i = 0; i < 4; ++i) {
-    int n = (a >> (24 - i * 8)) & 0xFF;
-    int non_zerop = 0;
-    
-    if (non_zerop || n / 100 > 0) {
-      *dst++ = digits[n / 100];
-      n %= 100;
-      non_zerop = 1;
-    }
-
-    if (non_zerop || n / 10 > 0) {
-      *dst++ = digits[n / 10];
-      n %= 10;
-      non_zerop = 1;
-    }
-    *dst++ = digits[n];
-    if (i != 3)
-      *dst++ = '.';
-  }
-
-  *dst++ = '\0';
-  return orig_dst;
-}
-
 const char * inet_ntop(int af, const void *src, char *dst, size_t size) {
-  switch (af) {
-  case AF_INET:
-    return inet_ntop_v4(src, dst, size);
-
-  default:
+  if (af != AF_INET && af != AF_INET6)
     return NULL;
-  }
-}
 
-int pipe(int fd[2]) {
-  return  _pipe(fd,4096, _O_BINARY);
+  SOCKADDR_STORAGE address;
+  DWORD address_length;
+
+  if (af == AF_INET)
+  {
+    address_length = sizeof(sockaddr_in);
+    sockaddr_in* ipv4_address = (sockaddr_in*)(&address);
+    ipv4_address->sin_family = AF_INET;
+    ipv4_address->sin_port = 0;
+    memcpy(&ipv4_address->sin_addr, src, sizeof(in_addr));
+  }
+  else // AF_INET6
+  {
+    address_length = sizeof(sockaddr_in6);
+    sockaddr_in6* ipv6_address = (sockaddr_in6*)(&address);
+    ipv6_address->sin6_family = AF_INET6;
+    ipv6_address->sin6_port = 0;
+    ipv6_address->sin6_flowinfo = 0;
+    // hmmm
+    ipv6_address->sin6_scope_id = 0;
+    memcpy(&ipv6_address->sin6_addr, src, sizeof(in6_addr));
+  }
+
+  DWORD string_length = (DWORD)(size);
+  int result;
+  result = WSAAddressToStringA((sockaddr*)(&address),
+                 address_length, 0, dst,
+                 &string_length);
+
+  // one common reason for this to fail is that ipv6 is not installed
+
+  return result == SOCKET_ERROR ? NULL : dst;
 }
 
 int kill(pid_t pid, int exit_code) {
@@ -133,4 +121,6 @@ int fcntl(int fd, int cmd, long arg) {
     u_long ulOption = 1;
     ioctlsocket(fd, FIONBIO, &ulOption);
   }
+  
+  return 1;
 }

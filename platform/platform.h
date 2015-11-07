@@ -1,10 +1,8 @@
 #pragma once
-#define _UWIN /*disable open close*/
-#include <io.h>
-#undef _UWIN
 
 #include <unistd.h>
 #include <stdbool.h>
+#include "sys/socket.h"
 
 #define HAVE_STRUCT_TIMESPEC
 
@@ -26,7 +24,6 @@ int clock_gettime(int what, struct timespec *ti);
 enum { LOCK_EX, LOCK_NB };
 
 const char *inet_ntop(int af, const void *src, char *dst, size_t size); 
-int pipe(int fd[2]);
 int kill(pid_t pid, int exit_code);
 int daemon(int a, int b);
 void sigaction(int flag, struct sigaction *action, int param);
@@ -62,9 +59,20 @@ void sp_write(poll_fd, int sock, void *ud, bool enable);
 int sp_wait(poll_fd, struct event *e, int max);
 void sp_nonblocking(int sock);
 
-int write(int fd, const void *ptr, size_t sz);
-int read(int fd, void *buffer, size_t sz);
-void close(int fd);
+int write_extend_socket(int fd, const void *ptr, size_t sz);
+int read_extend_socket(int fd, void *buffer, size_t sz);
+void close_extend_socket(int fd);
+int pipe_socket(int fd[2]);
+int connect_extend_errno(SOCKET s, const struct sockaddr* name, int namelen);
+
+#ifndef DONOT_USE_IO_EXTEND
+#define DONOT_USE_IO_EXTEND
+#define write(fd, ptr, sz) write_extend_socket(fd, ptr, sz)
+#define read(fd, ptr, sz)  read_extend_socket(fd, ptr, sz)
+#define close(fd) close_extend_socket(fd)
+#define pipe(fd) pipe_socket(fd)
+#define connect(s, name, namelen) connect_extend_errno(s, name, namelen)
+#endif
 
 __declspec(dllimport) int __stdcall gethostname(char *buffer, int len);
 
