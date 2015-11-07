@@ -7,6 +7,7 @@
 #include "sys/socket.h"
 #include <stdio.h>
 #include <conio.h>
+#include <errno.h>
 
 bool 
 sp_invalid(int efd) {
@@ -70,16 +71,16 @@ sp_nonblocking(int fd) {
 }
 
 int 
-write_extend_socket(int fd, const void *ptr, size_t sz) {
-	int ret = send(fd, (const char*)ptr, sz, 0);
+write_extend_socket(int fd, const void *buffer, size_t sz) {
+	int ret = send_extend_errno(fd, (const char*)buffer, sz, 0);
 	if (ret == SOCKET_ERROR && WSAGetLastError() == WSAENOTSOCK) 
-		return write(fd, ptr, sz);
+		return write(fd, buffer, sz);
 	return ret;
 }
 
 int 
 read_extend_socket(int fd, void *buffer, size_t sz) {
-	int ret = recv(fd, (char*)buffer, sz, 0);
+	int ret = recv_extend_errno(fd, (char*)buffer, sz, 0);
 	if (ret == SOCKET_ERROR && WSAGetLastError() == WSAENOTSOCK) 
 		return read(fd, buffer, sz);
 
@@ -154,7 +155,30 @@ connect_extend_errno(SOCKET s, const struct sockaddr* name, int namelen) {
 	int ret = connect(s, name, namelen);
 	if (ret == SOCKET_ERROR)  {
 		errno = WSAGetLastError();
+		if (errno == WSAEWOULDBLOCK)
+			errno = EINPROGRESS;
 	}
 	return ret;
 }
 
+int 
+send_extend_errno(SOCKET s, const char* buffer, int sz, int flag) {
+	int ret = send(s, buffer, sz, flag);
+	if (ret == SOCKET_ERROR)  {
+		errno = WSAGetLastError();
+		if (errno == WSAEWOULDBLOCK)
+			errno = EAGAIN;
+	}
+	return ret;
+}
+
+int 
+recv_extend_errno(SOCKET s, char* buffer, int sz, int flag) {
+	int ret = recv(s, buffer, sz, flag);
+	if (ret == SOCKET_ERROR)  {
+		errno = WSAGetLastError();
+		if (errno == WSAEWOULDBLOCK)
+			errno = EAGAIN;
+	}
+	return ret;
+}

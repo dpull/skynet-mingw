@@ -59,11 +59,13 @@ void sp_write(poll_fd, int sock, void *ud, bool enable);
 int sp_wait(poll_fd, struct event *e, int max);
 void sp_nonblocking(int sock);
 
-int write_extend_socket(int fd, const void *ptr, size_t sz);
+int write_extend_socket(int fd, const void *buffer, size_t sz);
 int read_extend_socket(int fd, void *buffer, size_t sz);
 void close_extend_socket(int fd);
 int pipe_socket(int fd[2]);
 int connect_extend_errno(SOCKET s, const struct sockaddr* name, int namelen);
+int send_extend_errno(SOCKET s, const char* buffer, int sz, int flag);
+int recv_extend_errno(SOCKET s, char* buffer, int sz, int flag);
 
 #ifndef DONOT_USE_IO_EXTEND
 #define DONOT_USE_IO_EXTEND
@@ -72,6 +74,8 @@ int connect_extend_errno(SOCKET s, const struct sockaddr* name, int namelen);
 #define close(fd) close_extend_socket(fd)
 #define pipe(fd) pipe_socket(fd)
 #define connect(s, name, namelen) connect_extend_errno(s, name, namelen)
+#define send(s, buffer, sz, flag) send_extend_errno(s, buffer, sz, flag)
+#define recv(s, buffer, sz, flag) recv_extend_errno(s, buffer, sz, flag)
 #endif
 
 __declspec(dllimport) int __stdcall gethostname(char *buffer, int len);
