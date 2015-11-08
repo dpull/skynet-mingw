@@ -40,7 +40,7 @@ all : \
 
 # lua
 $(LUA_STATICLIB) :
-	cd 3rd/lua && $(MAKE) CC='$(CC) -std=gnu99' $(PLAT)  && cd - && cp -f $(LUA_INC)/lua53.dll $(SKYNET_BUILD_PATH)/lua53.dll
+	cd 3rd/lua && $(MAKE) CC='$(CC)' $(PLAT)  && cd - && cp -f $(LUA_INC)/lua53.dll $(SKYNET_BUILD_PATH)/lua53.dll
 
 $(LUA_CLIB_PATH) :
 	mkdir $(LUA_CLIB_PATH)
