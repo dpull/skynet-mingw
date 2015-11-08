@@ -17,6 +17,7 @@ struct epoll_fd
     struct fd_set writefds;    
     struct fd_set exceptfds;    
     struct fd_t* fds;
+    CRITICAL_SECTION lock;
 };
 
 int epoll_startup()
@@ -41,18 +42,77 @@ int epoll_create(int size)
     if(size < 0 || size > FD_SETSIZE)
         return EINVAL;
 
-    struct epoll_fd* fd = (struct epoll_fd*)malloc(sizeof(*fd));
-    memset(fd, 0, sizeof(*fd));
+    struct epoll_fd* epoll_fd = (struct epoll_fd*)malloc(sizeof(*epoll_fd));
+    memset(epoll_fd, 0, sizeof(*epoll_fd));
 
-    fd->max_size = size;
-    fd->fds = (struct fd_t*)malloc(sizeof(*(fd->fds)) * size);
+    epoll_fd->max_size = size;
+    epoll_fd->fds = (struct fd_t*)malloc(sizeof(*(epoll_fd->fds)) * size);
+    InitializeCriticalSectionAndSpinCount(&epoll_fd->lock, 4000);
 
-    memset(fd->fds, 0, sizeof(*(fd->fds)) * size);
+
+    memset(epoll_fd->fds, 0, sizeof(*(epoll_fd->fds)) * size);
     for (int i = 0; i < size; ++i) {
-        fd->fds[i].fd = INVALID_SOCKET;
+        epoll_fd->fds[i].fd = INVALID_SOCKET;
     }
 
-    return (int)fd;
+    return (int)epoll_fd;
+}
+
+
+static int epoll_ctl_add(struct epoll_fd* epoll_fd, int fd, struct epoll_event* event)
+{
+    assert(!(event->events & EPOLLET));
+    assert(!(event->events & EPOLLONESHOT));
+
+    unsigned long hl;
+    if (WSANtohl(fd, 1, &hl) == SOCKET_ERROR && WSAGetLastError() == WSAENOTSOCK)
+        return EBADF;
+
+    for (int i = 0; i < epoll_fd->max_size; ++i) {
+        assert(!(event->events & EPOLLET));
+        assert(!(event->events & EPOLLONESHOT));
+        
+        if (epoll_fd->fds[i].fd == fd)
+            return EEXIST;
+    }
+
+    for (int i = 0; i < epoll_fd->max_size; ++i) {
+        struct fd_t* fd_t = epoll_fd->fds + i;
+        if (fd_t->fd == INVALID_SOCKET) {
+            fd_t->fd = fd;
+            fd_t->epoll_event = *event;
+            return 0;
+        }
+    }        
+
+    return ENOMEM;    
+}
+
+static int epoll_ctl_mod(struct epoll_fd* epoll_fd, int fd, struct epoll_event* event)
+{
+    assert(!(event->events & EPOLLET));
+    assert(!(event->events & EPOLLONESHOT));
+
+     for (int i = 0; i < epoll_fd->max_size; ++i) {
+        struct fd_t* fd_t = epoll_fd->fds + i;
+        if (fd_t->fd == fd) {
+            fd_t->epoll_event = *event;
+            return 0;
+        }
+    }
+    return ENOENT;   
+}
+
+static int epoll_ctl_del(struct epoll_fd* epoll_fd, int fd, struct epoll_event* event)
+{
+    for (int i = 0; i < epoll_fd->max_size; ++i) {
+        struct fd_t* fd_t = epoll_fd->fds + i;
+        if (fd_t->fd == fd) {
+            fd_t->fd = INVALID_SOCKET;
+            return 0;
+        }
+    }
+    return ENOENT;   
 }
 
 /*
@@ -78,112 +138,68 @@ Errors:
 */
 int epoll_ctl(int epfd, int opcode, int fd, struct epoll_event* event)
 {
-    struct epoll_fd* efd = (struct epoll_fd*)epfd;
-    if(opcode == EPOLL_CTL_ADD) {
-        assert(!(event->events & EPOLLET));
-        assert(!(event->events & EPOLLONESHOT));
-
-        long hl;
-        if (WSANtohl(fd, 1, &hl) == SOCKET_ERROR && WSAGetLastError() == WSAENOTSOCK)
-            return EBADF;
-
-        for (int i = 0; i < efd->max_size; ++i) {
-            assert(!(event->events & EPOLLET));
-            assert(!(event->events & EPOLLONESHOT));
-            
-            if (efd->fds[i].fd == fd)
-                return EEXIST;
-        }
-
-        for (int i = 0; i < efd->max_size; ++i) {
-            struct fd_t* fd_t = efd->fds + i;
-            if (fd_t->fd == INVALID_SOCKET) {
-                fd_t->fd = fd;
-                fd_t->epoll_event = *event;
-                return 0;
-            }
-        }        
-
-        return ENOMEM;
+    int ret = ENOENT;
+    struct epoll_fd* epoll_fd = (struct epoll_fd*)epfd;
+    EnterCriticalSection(&epoll_fd->lock);
+    switch (opcode) {
+        case EPOLL_CTL_ADD:
+            ret = epoll_ctl_add(epoll_fd, fd, event);
+            break;
+        case EPOLL_CTL_MOD:
+            ret = epoll_ctl_mod(epoll_fd, fd, event);
+            break;  
+        case EPOLL_CTL_DEL:
+            ret = epoll_ctl_del(epoll_fd, fd, event);
+            break;           
     }
-    else if(opcode == EPOLL_CTL_MOD) {
-        for (int i = 0; i < efd->max_size; ++i) {
-            struct fd_t* fd_t = efd->fds + i;
-            if (fd_t->fd == fd) {
-                fd_t->epoll_event = *event;
-                return 0;
-            }
-        }
-        return ENOENT;
-    }
-    else if(opcode == EPOLL_CTL_DEL) {
-        for (int i = 0; i < efd->max_size; ++i) {
-            struct fd_t* fd_t = efd->fds + i;
-            if (fd_t->fd == fd) {
-                fd_t->fd = INVALID_SOCKET;
-                return 0;
-            }
-        }
-        return ENOENT;
-    }
-
-    return EINVAL;
+    LeaveCriticalSection(&epoll_fd->lock);
+    return ret;
 }
 
-int epoll_wait(int epfd, struct epoll_event* events, int maxevents, int timeout)
+static void epoll_wait_init(struct epoll_fd* epoll_fd)
 {
-    struct epoll_fd* fd = (struct epoll_fd*)epfd;
+    FD_ZERO(&epoll_fd->readfds);    
+    FD_ZERO(&epoll_fd->writefds);    
+    FD_ZERO(&epoll_fd->exceptfds);    
 
-    FD_ZERO(&fd->readfds);    
-    FD_ZERO(&fd->writefds);    
-    FD_ZERO(&fd->exceptfds);    
-
-    for (int i = 0; i < fd->max_size; ++i) {
-        struct fd_t* fd_t = fd->fds + i;
+    for (int i = 0; i < epoll_fd->max_size; ++i) {
+        struct fd_t* fd_t = epoll_fd->fds + i;
         if (fd_t->fd == INVALID_SOCKET)
             continue;
 
         if (fd_t->epoll_event.events & EPOLLIN || fd_t->epoll_event.events & EPOLLPRI)
-            FD_SET(fd_t->fd, &fd->readfds);   
+            FD_SET(fd_t->fd, &epoll_fd->readfds);   
 
         if (fd_t->epoll_event.events & EPOLLOUT)
-            FD_SET(fd_t->fd, &fd->writefds);  
+            FD_SET(fd_t->fd, &epoll_fd->writefds);  
 
         if (fd_t->epoll_event.events & EPOLLERR || fd_t->epoll_event.events & EPOLLRDHUP)
-            FD_SET(fd_t->fd, &fd->exceptfds);   
+            FD_SET(fd_t->fd, &epoll_fd->exceptfds);   
     }    
+}
 
-    struct timeval wait_time = {timeout / 1000, 1000 * (timeout % 1000)};
-    int total = select(1, &fd->readfds, &fd->writefds, &fd->exceptfds, timeout >= 0 ? &wait_time : NULL);  
-    if (total == 0)
-        return 0;
-
-    if (total < 0) {
-        errno = WSAGetLastError();
-        printf("epoll_wait %d\n",  WSAGetLastError());
-        return -1;
-    }
-
+static int epoll_wait_get_result(struct epoll_fd* epoll_fd, struct epoll_event* events, int maxevents)
+{
     int events_index = 0;
-    for (int i = 0; i < fd->max_size; ++i) {
-        struct fd_t* fd_t = fd->fds + i;
+    for (int i = 0; i < epoll_fd->max_size; ++i) {
+        struct fd_t* fd_t = epoll_fd->fds + i;
         if (fd_t->fd == INVALID_SOCKET)
             continue;
 
         struct epoll_event* event = events + events_index;
         event->events = 0;
-        if (FD_ISSET(fd_t->fd, &fd->readfds)) {
+        if (FD_ISSET(fd_t->fd, &epoll_fd->readfds)) {
             if (fd_t->epoll_event.events & EPOLLIN)  
                 event->events |= EPOLLIN;
             else if (fd_t->epoll_event.events & EPOLLPRI)  
                 event->events |= EPOLLPRI;
         }
 
-        if (FD_ISSET(fd_t->fd, &fd->writefds)) {
+        if (FD_ISSET(fd_t->fd, &epoll_fd->writefds)) {
             event->events |= EPOLLOUT;
         }
 
-        if (FD_ISSET(fd_t->fd, &fd->exceptfds)) {
+        if (FD_ISSET(fd_t->fd, &epoll_fd->exceptfds)) {
             if (fd_t->epoll_event.events & EPOLLERR)  
                 event->events |= EPOLLERR;
             else if (fd_t->epoll_event.events & EPOLLRDHUP)  
@@ -197,15 +213,40 @@ int epoll_wait(int epfd, struct epoll_event* events, int maxevents, int timeout)
                 break;
         }
     }   
-
     return events_index;
+}
+
+int epoll_wait(int epfd, struct epoll_event* events, int maxevents, int timeout)
+{
+    struct epoll_fd* epoll_fd = (struct epoll_fd*)epfd;
+
+    EnterCriticalSection(&epoll_fd->lock);
+    epoll_wait_init(epoll_fd);
+    LeaveCriticalSection(&epoll_fd->lock);
+
+    struct timeval wait_time = {timeout / 1000, 1000 * (timeout % 1000)};
+    int total = select(1, &epoll_fd->readfds, &epoll_fd->writefds, &epoll_fd->exceptfds, timeout >= 0 ? &wait_time : NULL);  
+    if (total == 0)
+        return 0;
+
+    if (total < 0) {
+        errno = WSAGetLastError();
+        return -1;
+    }
+
+    EnterCriticalSection(&epoll_fd->lock);
+    int count = epoll_wait_get_result(epoll_fd, events, maxevents);
+    LeaveCriticalSection(&epoll_fd->lock);
+    
+    return count;
 }
 
 int epoll_close(int epfd)
 {
-    struct epoll_fd* fd = (struct epoll_fd*)epfd;
-    free(fd->fds);
-	free(fd);
+    struct epoll_fd* epoll_fd = (struct epoll_fd*)epfd;
+    DeleteCriticalSection(&epoll_fd->lock);
+    free(epoll_fd->fds);
+	free(epoll_fd);
     return 0;
 }
 
