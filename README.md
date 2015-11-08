@@ -1,4 +1,8 @@
 #对 skynet 的源码没有任何改动的windows版
+1. skynet 以submoudle链接，方便升级，确保不改。
+1. 仅扩展了600行代码，方便维护。
+
+存在的问题，console服务不可用（无法对stdin进行select）。
 
 ## 环境
 1. 安装MinGW
