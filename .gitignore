@@ -1,0 +1,12 @@
+*.dll
+*.exe
+3rd/
+cservice/
+examples/
+luaclib/
+lualib/
+lualib-src/
+service/
+service-src/
+skynet-src/
+test/
