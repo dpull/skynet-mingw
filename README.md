@@ -1,19 +1,22 @@
 #对 skynet 的源码没有任何改动的windows版
+[![Build status](https://ci.appveyor.com/api/projects/status/9j45lldyxmfdau3r?svg=true)](https://ci.appveyor.com/project/dpull/skynet-mingw)
+
 1. skynet 以submoudle链接，方便升级，确保不改。
 1. 仅扩展了600行代码，方便维护。
 
 存在的问题，console服务不可用（无法对stdin进行select）。
 
 ## 环境
-1. 安装MinGW
+1. 安装 [MinGW](http://sourceforge.net/projects/mingw/files/)
 1. 安装gcc g++
 1. 安装pthread (dev)
+1. 运行 MinGW\msys\1.0\msys.bat
 1. 运行prepare.sh
 1. 运行make
 
 ## 测试
 
-```C
+```bash
 ./skynet.exe examples/config    # Launch first skynet node  (Gate server) and a skynet-master (see config for standalone option)
 ./3rd/lua/lua examples/client.lua   # Launch a client, and try to input hello.
 ```

@@ -1,5 +1,4 @@
 version: 1.0.{build}
-os: Windows Server 2012 R2
 build_script:
 - cmd: >-
     git submodule update --init --recursive
@@ -11,12 +10,6 @@ build_script:
     mklink /j service-src skynet\service-src
 
     mklink /j skynet-src skynet\skynet-src
-
-    dir C:\Qt\Tools\mingw492_32\bin
-
-    dir C:\MinGW\
-
-    dir C:\MinGW\lib
 
     Set Path=C:\MinGW\msys\1.0\bin;C:\MinGW\bin
 
