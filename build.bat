@@ -4,5 +4,4 @@ mklink /j service-src skynet\service-src
 mklink /j skynet-src skynet\skynet-src
 
 Set Path=C:\MinGW\msys\1.0\bin;C:\MinGW\bin
-make cleanall
-make
+make -f AutoBuild
