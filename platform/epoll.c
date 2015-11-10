@@ -27,20 +27,16 @@ int epoll_startup()
 }
 
 /*
-Errors:
-    EINVAL
-        size is not positive.
-    ENFILE
-        The system limit on the total number of open files has been reached.
-    ENOMEM
-        There was insufficient memory to create the kernel object.
+http://linux.die.net/man/2/epoll_create
 */
 int epoll_create(int size)
 {
     assert(sizeof(struct epoll_fd*) <= sizeof(int));
 
-    if(size < 0 || size > FD_SETSIZE)
-        return EINVAL;
+    if(size < 0 || size > FD_SETSIZE) {
+        errno = EINVAL;
+        return 0;
+    }
 
     struct epoll_fd* epoll_fd = (struct epoll_fd*)malloc(sizeof(*epoll_fd));
     memset(epoll_fd, 0, sizeof(*epoll_fd));
@@ -116,44 +112,29 @@ static int epoll_ctl_del(struct epoll_fd* epoll_fd, int fd, struct epoll_event* 
 }
 
 /*
-    EPOLL_CTL_ADD
-        Add the target file descriptor fd to the epoll descriptor epfd and associate the event event with the internal file linked to fd.
-    EPOLL_CTL_MOD
-        Change the event event associated with the target file descriptor fd.
-    EPOLL_CTL_DEL
-        Remove the target file descriptor fd from the epoll file descriptor, epfd. The event is ignored and can be NULL (but see BUGS below).
-Errors:
-    EBADF
-        epfd or fd is not a valid file descriptor.
-    EEXIST
-        op was EPOLL_CTL_ADD, and the supplied file descriptor fd is already in epfd.
-    EINVAL
-        epfd is not an epoll file descriptor, or fd is the same as epfd, or the requested operation op is not supported by this interface.
-    ENOENT
-        op was EPOLL_CTL_MOD or EPOLL_CTL_DEL, and fd is not in epfd.
-    ENOMEM
-        There was insufficient memory to handle the requested op control operation.
-    EPERM
-        The target file fd does not support epoll.
+http://linux.die.net/man/2/epoll_ctl
 */
 int epoll_ctl(int epfd, int opcode, int fd, struct epoll_event* event)
 {
-    int ret = ENOENT;
+    int error = ENOENT;
     struct epoll_fd* epoll_fd = (struct epoll_fd*)epfd;
     EnterCriticalSection(&epoll_fd->lock);
     switch (opcode) {
         case EPOLL_CTL_ADD:
-            ret = epoll_ctl_add(epoll_fd, fd, event);
+            error = epoll_ctl_add(epoll_fd, fd, event);
             break;
         case EPOLL_CTL_MOD:
-            ret = epoll_ctl_mod(epoll_fd, fd, event);
+            error = epoll_ctl_mod(epoll_fd, fd, event);
             break;  
         case EPOLL_CTL_DEL:
-            ret = epoll_ctl_del(epoll_fd, fd, event);
+            error = epoll_ctl_del(epoll_fd, fd, event);
             break;           
     }
     LeaveCriticalSection(&epoll_fd->lock);
-    return ret;
+
+    if (error != 0)
+        errno = error;
+    return error != 0 ? -1 : 0;
 }
 
 static void epoll_wait_init(struct epoll_fd* epoll_fd)
@@ -216,6 +197,9 @@ static int epoll_wait_get_result(struct epoll_fd* epoll_fd, struct epoll_event* 
     return events_index;
 }
 
+/*
+http://linux.die.net/man/2/epoll_wait
+*/
 int epoll_wait(int epfd, struct epoll_event* events, int maxevents, int timeout)
 {
     struct epoll_fd* epoll_fd = (struct epoll_fd*)epfd;
