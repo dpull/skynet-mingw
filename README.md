@@ -4,7 +4,16 @@
 1. skynet 以submoudle链接，方便升级，确保不改。
 1. 仅扩展了600行代码，方便维护。
 
-存在的问题，console服务不可用（无法对stdin进行select）。
+存在的问题，console服务不可用（无法对stdin进行select）， 会提示如下出错信息，暂时没想到好法子解决。
+
+```bash
+stack traceback:
+        [C]: in function 'assert'
+        ./lualib/socket.lua:361: in function 'socket.lock'
+        ./service/console.lua:15: in upvalue 'func'
+        ./lualib/skynet.lua:452: in upvalue 'f'
+        ./lualib/skynet.lua:105: in function <./lualib/skynet.lua:104>
+```
 
 ## 环境
 1. 安装 [MinGW](http://sourceforge.net/projects/mingw/files/)
