@@ -2,7 +2,7 @@
 
 [skynet-mingw](https://github.com/dpull/skynet-mingw) 是[skynet](https://github.com/cloudwu/skynet)的windows平台的实现。其主要特点是：
 
-1. skynet 以submoudle链接，方便升级，**确保不改**。
+1. skynet 以submodule链接，方便升级，**确保不改**。
 1. 仅扩展了700行代码，方便维护。
 1. 自动更新skynet，自动构建，确保质量。
 
