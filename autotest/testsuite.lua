@@ -30,8 +30,17 @@ local function save(self)
 	end)  
 end
 
+local function allpass(self)
+	for k, v in ipairs(self.testcase) do
+		if not v.is_passed then
+			return false
+		end
+	end
+	return true
+end
+
 local function create_testsuite(testsuite)
-	return {testsuite = testsuite, testcase = {}, add = add_testcase, save = save, upload = upload, }
+	return {testsuite = testsuite, testcase = {}, add = add_testcase, save = save, upload = upload, allpass = allpass,}
 end
 
 return create_testsuite;

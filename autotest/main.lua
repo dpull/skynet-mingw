@@ -20,6 +20,6 @@ skynet.start(function()
 	testsuite:add("testdemo2", true, "test!")
 
 	testsuite:save("xunit_results.xml")
-	os.exit()
+	os.exit(testsuite:allpass() and 0 or 1)
 end)
 
