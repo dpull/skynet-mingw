@@ -15,9 +15,9 @@ skynet.start(function()
 		})
 		return watchdog;
 	end)
-	testsuite:add("start watchdog", sucess and watchdog, watchdog)
-	testsuite:add("test demo1", false, "test!")
-	testsuite:add("test demo2", true, "test!")
+	testsuite:add("startwatchdog", sucess and watchdog, watchdog)
+	testsuite:add("testdemo1", false, "test!")
+	testsuite:add("testdemo2", true, "test!")
 
 	testsuite:upload()
 	os.exit()
