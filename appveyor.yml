@@ -31,7 +31,7 @@ build_script:
 
     7z.exe a skynet_mingw.zip luaclib cservice examples lualib service test platform.dll lua53.dll skynet.dll skynet.exe C:\MinGW\bin\pthreadGC2.dll C:\MinGW\bin\libgcc_s_dw2-1.dll
 test_script:
-- cmd: >-
+- ps: >-
     skynet.exe autotest\config
 
 
