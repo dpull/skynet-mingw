@@ -4,7 +4,7 @@
 
 1. skynet 以submodule链接，方便升级，**确保不改**。
 1. 仅扩展了700行代码，方便维护。
-1. 自动更新skynet，自动构建，确保质量。
+1. 自动更新skynet，自动构建，自动化测试，确保质量。
 
 ## 编译
 不想自行编译的朋友可访问 [自动构建平台获取最新的构建版本](https://ci.appveyor.com/project/dpull/skynet-mingw/build/artifacts)。
