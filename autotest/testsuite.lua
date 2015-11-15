@@ -18,7 +18,7 @@ appveyor AddTest options:
 local function save(self)
 	pcall(function () 
 		for k, v in ipairs(self.testcase) do
-			local cmd = string.format("appveyor AddTest \"%s\" -Framework xUnit -FileName nil -Outcome", 
+			local cmd = string.format("appveyor AddTest \"%s\" -Framework xUnit -FileName nil -Outcome %s", 
 				v.testcase, v.is_passed and "Passed" or "Failed")
 			if not v.is_passed then
 				cmd = string.format("%s -ErrorMessage %s", cmd, v.error_message)
