@@ -29,7 +29,7 @@ build_script:
 
     make
 
-    7z.exe a skynet_mingw.zip luaclib cservice examples lualib service test platform.dll skynet.dll skynet.exe C:\MinGW\bin\pthreadGC2.dll C:\MinGW\bin\libgcc_s_dw2-1.dll
+    7z.exe a skynet_mingw.zip luaclib cservice examples lualib service test platform.dll lua53.dll skynet.dll skynet.exe C:\MinGW\bin\pthreadGC2.dll C:\MinGW\bin\libgcc_s_dw2-1.dll
 artifacts:
 - path: skynet_mingw.zip
   name: skynet_mingw

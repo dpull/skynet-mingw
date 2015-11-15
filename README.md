@@ -1,25 +1,25 @@
-# 关于skynet-mingw
-[![Build status](https://ci.appveyor.com/api/projects/status/9j45lldyxmfdau3r?svg=true)](https://ci.appveyor.com/project/dpull/skynet-mingw)
+# 关于skynet-mingw [![Build status](https://ci.appveyor.com/api/projects/status/9j45lldyxmfdau3r?svg=true)](https://ci.appveyor.com/project/dpull/skynet-mingw)
 
-产品下载：[skynet_mingw.zip](https://ci.appveyor.com/project/dpull/skynet-mingw/build/artifacts)
+[skynet-mingw](https://github.com/dpull/skynet-mingw) 是[skynet](https://github.com/cloudwu/skynet)的windows平台的实现。其主要特点是：
 
-对[skynet](https://github.com/cloudwu/skynet)没有任何改动的windows版。
-
-1. skynet 以submoudle链接，方便升级，确保不改。
+1. skynet 以submoudle链接，方便升级，**确保不改**。
 1. 仅扩展了700行代码，方便维护。
+1. 自动更新skynet，自动构建，确保质量。
 
 ## 编译
+不想自行编译的朋友可访问 [自动构建平台获取最新的构建版本](https://ci.appveyor.com/project/dpull/skynet-mingw/build/artifacts)。
+
 1. 安装 [MinGW](http://sourceforge.net/projects/mingw/files/)
-1. 安装gcc g++
-1. 安装pthread (dev)
-1. 运行 MinGW\msys\1.0\msys.bat
-1. 运行prepare.sh
-1. 运行make
+1. 安装 `gcc g++`
+1. 安装 `pthread (dev)`
+1. 运行 `MinGW\msys\1.0\msys.bat`
+1. 运行 `prepare.sh`
+1. 运行 `make`
 
 ### 常见问题
-1. 建议使用 MinGW\msys\1.0\msys.bat 进行编译
-1. 错误: gcc: Command not found  解决: 修改msys\1.0\etc\fstab中的/mingw路径
-1. 当提示缺少类似dlfcn.h文件时,建议看看头文件搜索路径是否有问题,举个例子perl(Strawberry Perl)中有gcc程序,同时它注册了系统环境变量
+1. 建议使用 `MinGW\msys\1.0\msys.bat` 进行编译
+1. 错误: `gcc: Command not found`, 解决: 修改 `msys\1.0\etc\fstab` 中的 `/mingw` 路径
+1. 当提示缺少类似`dlfcn.h`文件时，建议看看头文件搜索路径是否有问题，举个例子`perl(Strawberry Perl)`中有`gcc`程序，同时它注册了系统环境变量
 
 ## 测试
 
@@ -28,7 +28,7 @@
 ./3rd/lua/lua examples/client.lua   # Launch a client, and try to input hello.
 ```
 
-存在的问题，console服务不可用（无法对stdin进行select）， 会提示如下出错信息，暂时没有解决方案。
+存在的问题，console服务不可用(无法对stdin进行select)， 会提示如下出错信息，暂时没有解决方案。
 
 ```bash
 stack traceback:
