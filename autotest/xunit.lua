@@ -26,11 +26,11 @@ local function add_testcase(self, testcase, is_passed, stacktrace)
 	table.insert(self.testcase, {testcase = testcase, is_passed = is_passed, stacktrace = stacktrace})
 end
 
-local function save(self, filename)
-	local file = io.open(filename,"w")
+local function save(self)
+	local file = io.open(self.filename,"w")
 	file:write(string.format(template_head, self.testsuite))
 	for k, v in ipairs(self.testcase) do
-		if is_passed then
+		if v.is_passed then
 			file:write(string.format(template_passed_item, v.testcase, self.testsuite))
 		else
 			file:write(string.format(template_failed_item, v.testcase, self.testsuite, stacktrace))
@@ -40,8 +40,34 @@ local function save(self, filename)
 	file:close()
 end
 
-local function create_testsuite(testsuite)
-	return {testsuite = testsuite, testcase = {}, add = add_testcase, save = save, }
+--[[
+appveyor AddTest options:
+ 
+  -Name             - Required. The name of test.
+  -Framework        - Required. The name of testing framework, e.g. NUnit, xUnit, MSTest.
+  -FileName         - Required. File name containg test.
+  -Outcome          - Test outcome: None, Running, Passed, Failed, Ignored, Skipped, Inconclusive, NotFound, Cancelled, NotRunnable
+  -Duration         - Test duration in milliseconds.
+  -ErrorMessage     - Error message of failed test.
+  -ErrorStackTrace  - Error stack trace of failed test.
+  -StdOut           - Standard console output from the test.
+  -StdErr           - Error output from the test.
+]]
+local function upload(self)
+	pcall(function () 
+		self:save()
+
+		for k, v in ipairs(self.testcase) do
+			local cmd = string.format("appveyor AddTest %s -Framework xUnit -FileName %s", v.testcase, self.filename)
+			print(cmd)
+			os.execute(cmd)
+		end
+	end)  
+end
+
+local function create_testsuite(testsuite, filename)
+	filename = filename or "xunit_output.xml"
+	return {testsuite = testsuite, filename = filename, testcase = {}, add = add_testcase, save = save, upload = upload, }
 end
 
 return create_testsuite;

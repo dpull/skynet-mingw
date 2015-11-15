@@ -16,27 +16,10 @@ skynet.start(function()
 		return watchdog;
 	end)
 	testsuite:add("start watchdog", sucess and watchdog, watchdog)
+	testsuite:add("test demo1", false, "test!")
+	testsuite:add("test demo2", true, "test!")
 
-	local output = "output.xml"
-	testsuite:save(output);
-	pcall(function () 
-		local cmd = string.format("appveyor AddTest %s -Framework xUnit -FileName %s", testsuite_name, output)
-		print(cmd)
-		os.execute(cmd)
-	end)  
+	testsuite:upload()
 	os.exit()
 end)
 
---[[
-appveyor AddTest options:
- 
-  -Name             - Required. The name of test.
-  -Framework        - Required. The name of testing framework, e.g. NUnit, xUnit, MSTest.
-  -FileName         - Required. File name containg test.
-  -Outcome          - Test outcome: None, Running, Passed, Failed, Ignored, Skipped, Inconclusive, NotFound, Cancelled, NotRunnable
-  -Duration         - Test duration in milliseconds.
-  -ErrorMessage     - Error message of failed test.
-  -ErrorStackTrace  - Error stack trace of failed test.
-  -StdOut           - Standard console output from the test.
-  -StdErr           - Error output from the test.
-]]
