@@ -1,5 +1,5 @@
 local skynet = require "skynet"
-local xunit = require "xunit"
+local xunit = require "testsuite"
 
 local max_client = 64
 

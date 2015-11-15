@@ -31,15 +31,7 @@ build_script:
 
     7z.exe a skynet_mingw.zip luaclib cservice examples lualib service test platform.dll lua53.dll skynet.dll skynet.exe C:\MinGW\bin\pthreadGC2.dll C:\MinGW\bin\libgcc_s_dw2-1.dll
 test_script:
-- ps: >-
-    .\skynet.exe .\autotest\config
-
-
-    # upload results to AppVeyor
-
-    $wc = New-Object 'System.Net.WebClient'
-
-    $wc.UploadFile("https://ci.appveyor.com/api/testresults/xunit/$($env:APPVEYOR_JOB_ID)", (Resolve-Path .\xunit_results.xml))
+- cmd: skynet.exe autotest\config
 artifacts:
 - path: skynet_mingw.zip
   name: skynet_mingw
