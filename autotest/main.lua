@@ -19,7 +19,7 @@ skynet.start(function()
 	testsuite:add("testdemo1", false, "test!")
 	testsuite:add("testdemo2", true, "test!")
 
-	testsuite:upload()
+	testsuite:save("xunit_results.xml")
 	os.exit()
 end)
 
