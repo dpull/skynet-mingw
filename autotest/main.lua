@@ -16,8 +16,8 @@ skynet.start(function()
 		return watchdog;
 	end)
 	testsuite:add("startwatchdog", sucess and watchdog, watchdog)
-	testsuite:add("testdemo1", false, "test!")
-	testsuite:add("testdemo2", true, "test!")
+	-- testsuite:add("testdemo1", false, "test!")
+	-- testsuite:add("testdemo2", true, "test!")
 
 	testsuite:save("xunit_results.xml")
 	os.exit(testsuite:allpass() and 0 or 1)
