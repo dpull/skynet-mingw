@@ -17,14 +17,14 @@ AddTest options:
   -StdErr           - Error output from the test.
 
 	local cmd = string.format("appveyor AddTest %s -Outcome %s", testcase, sucess and "Passed" or "Failed")
-	if errormsg then
+	if not sucess and errormsg then
 		cmd = cmd .. " -StdErr " .. errormsg
 	end
 	pcall(function () os.execute(cmd) end)  
 ]]
 
 	local cmd = string.format("Test %s %s", testcase, sucess and "Passed" or "Failed")
-	if errormsg then
+	if not sucess and errormsg then
 		cmd = cmd .. " : " .. errormsg
 	end
 	print(cmd);
