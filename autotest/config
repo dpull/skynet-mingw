@@ -8,10 +8,12 @@ master = "127.0.0.1:2013"
 start = "main"	-- main script
 bootstrap = "snlua bootstrap"	-- The service for bootstrap
 standalone = "0.0.0.0:2013"
-luaservice = root.."service/?.lua;" .. root.."autotest/?.lua;" .. root.."test/?.lua;" .. root.."examples/?.lua;"
+luaservice = root.."service/?.lua;" .. root.."autotest/?.lua;" .. root.."test/?.lua;" .. root.."examples/?.lua"
 lualoader = "lualib/loader.lua"
 -- preload = "./autotest/preload.lua"	-- run preload.lua before every lua service run
-snax = root.."autotest/?.lua;" .. root.."autotest/?.lua;" .. root.."test/?.lua;" .. root.."examples/?.lua;"
+snax = root.."autotest/?.lua;" .. root.."autotest/?.lua;" .. root.."test/?.lua;" .. root.."examples/?.lua"
 -- snax_interface_g = "snax_g"
 cpath = root.."cservice/?.so"
 -- daemon = "./skynet.pid"
+
+lua_path =  root.."lualib/?.lua;" .. root.. "lualib/?/init.lua;" .. root.. "autotest/?.lua"
