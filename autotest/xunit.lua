@@ -1,6 +1,9 @@
 local template_head = [[
-<assembly name="C:\Projects\GitHub\appvyr-xunit-tests\xUnit_x86_Clr4\bin\Debug\xUnit_x86_Clr4.dll" run-date="2014-11-28" run-time="14:11:45" configFile="C:\Tools\xUnit\xunit.console.clr4.x86.exe.Config" time="0.130" total="1" passed="0" failed="1" skipped="0" environment="32-bit .NET 4.0.30319.34014" test-framework="xUnit.net 1.9.2.1705">
-	<class time="0.130" name="%s" total="1" passed="0" failed="1" skipped="0">
+<assembly name="C:\Projects\GitHub\appvyr-xunit-tests\xUnit_x86_Clr4\bin\Debug\xUnit_x86_Clr4.dll" 
+	configFile="C:\Tools\xUnit\xunit.console.clr4.x86.exe.Config" time="0.130" 
+	total="%d" passed="%d" failed="%d" skipped="0" 
+	environment="32-bit .NET 4.0.30319.34014" test-framework="xUnit.net 1.9.2.1705">
+	<class time="0.130" name="%s" total="%d" passed="%d" failed="%d" skipped="0">
 ]]
 local template_foot = [[
 	</class>
@@ -28,7 +31,16 @@ end
 
 local function save(self, filename)
 	local file = io.open(filename,"w")
-	file:write(string.format(template_head, self.testsuite))
+	local passed = 0
+	local failed = 0;
+	for k, v in ipairs(self.testcase) do
+		if v.is_passed then
+			passed = passed + 1
+		else
+			failed = failed + 1
+		end
+	end	
+	file:write(string.format(template_head, passed + failed, passed, failed, self.testsuite, passed + failed, passed, failed))
 	for k, v in ipairs(self.testcase) do
 		if v.is_passed then
 			file:write(string.format(template_passed_item, v.testcase, self.testsuite))
