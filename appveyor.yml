@@ -12,6 +12,15 @@ build_script:
     mklink /j skynet-src skynet\skynet-src
 
 
+    mklink /j lualib skynet\lualib
+
+    mklink /j service skynet\service
+
+    mklink /j test skynet\test
+
+    mklink /j examples skynet\examples
+
+
     echo %PATH%
 
     Set Path=%path%;C:\MinGW\msys\1.0\bin;C:\MinGW\bin
@@ -19,3 +28,8 @@ build_script:
     mingw-get install mingw32-pthreads-w32-dev
 
     make
+
+    7z.exe a skynet_mingw.zip luaclib cservice examples lualib service test pthreadGC2.dll libgcc_s_dw2-1.dll platform.dll skynet.dll skynet.exe
+artifacts:
+- path: skynet_mingw.zip
+  name: skynet_mingw
