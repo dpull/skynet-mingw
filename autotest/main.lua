@@ -1,25 +1,22 @@
 local skynet = require "skynet"
-local xunit = require "testsuite"
+local test = require "xunit"
+require "skynet.manager"
 
 local max_client = 64
 
-skynet.start(function()
-	local testsuite_name = "skynet-mingw"
-	local testsuite = xunit(testsuite_name)
-	local sucess, watchdog = pcall(function ()
-		local watchdog = skynet.newservice("watchdog")
-		skynet.call(watchdog, "lua", "start", {
-			port = 8888,
-			maxclient = max_client,
-			nodelay = true,
-		})
-		return watchdog;
-	end)
-	testsuite:add("startwatchdog", sucess and watchdog, watchdog)
-	-- testsuite:add("testdemo1", false, "test!")
-	-- testsuite:add("testdemo2", true, "test!")
+local function start_watchdog()
+	local watchdog = skynet.newservice("watchdog")
+	skynet.call(watchdog, "lua", "start", {
+		port = 8888,
+		maxclient = max_client,
+		nodelay = true,
+	})
+	assert(watchdog)	
+	return true
+end
 
-	testsuite:save("xunit_results.xml")
-	os.exit(testsuite:allpass() and 0 or 1)
+skynet.start(function()
+	test("start watchdog", start_watchdog)
+	skynet.abort()
 end)
 
