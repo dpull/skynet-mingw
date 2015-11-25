@@ -8,7 +8,7 @@ function init(...)
 end
 
 function exit(...)
-	print ("snax service exit: ", ...)
+    print ("snax service exit: ", ...)
 end
 
 function response.hello(hello)
@@ -16,5 +16,5 @@ function response.hello(hello)
 end
 
 function accept.hello(hello)
-	assert("MAIN_POST" == hello)
+    assert("MAIN_POST" == hello)
 end

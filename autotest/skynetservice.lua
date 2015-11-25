@@ -4,7 +4,7 @@ local CMD = {}
 
 function CMD.send_func(msg)
     print ("This is a send from anthor service:", msg)
-	assert("MAIN_SEND" == msg)
+    assert("MAIN_SEND" == msg)
 end
  
 function CMD.call_func(msg)
