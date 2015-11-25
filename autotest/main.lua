@@ -18,19 +18,19 @@ end
 
 local function test_skynet_api()
     local service = skynet.uniqueservice("skynetservice")
-	assert(service)
-	local service1 = skynet.queryservice("skynetservice")
-	assert(service1)
+    assert(service)
+    local service1 = skynet.queryservice("skynetservice")
+    assert(service1)
     skynet.send(service, "lua", "send_func", "MAIN_SEND")
-	assert("MAIN_CALL" == skynet.call(service, "lua", "call_func", "MAIN_CALL"))
-	return true
+    assert("MAIN_CALL" == skynet.call(service, "lua", "call_func", "MAIN_CALL"))
+    return true
 end
 
 local function test_snax_api()
     local service = snax.uniqueservice("snaxservice", "hello world")
-	assert(service)
-	local service1 = snax.queryservice("snaxservice")
-	assert(service1 == service)
+    assert(service)
+    local service1 = snax.queryservice("snaxservice")
+    assert(service1 == service)
     service.post.hello("MAIN_POST")
     assert("MAIN_REQ" == service.req.hello("MAIN_REQ"))
     return true    
