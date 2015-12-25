@@ -1,25 +1,45 @@
 local skynet = require "skynet"
-local xunit = require "testsuite"
+local test = require "xunit"
+local snax = require "snax"
+require "skynet.manager"
 
 local max_client = 64
 
+local function start_watchdog()
+    local watchdog = skynet.newservice("watchdog")
+    skynet.call(watchdog, "lua", "start", {
+        port = 8888,
+        maxclient = max_client,
+        nodelay = true,
+    })
+    assert(watchdog)    
+    return true
+end
+
+local function test_skynet_api()
+    local service = skynet.uniqueservice("skynetservice")
+    assert(service)
+    local service1 = skynet.queryservice("skynetservice")
+    assert(service1)
+    skynet.send(service, "lua", "send_func", "MAIN_SEND")
+    assert("MAIN_CALL" == skynet.call(service, "lua", "call_func", "MAIN_CALL"))
+    return true
+end
+
+local function test_snax_api()
+    local service = snax.uniqueservice("snaxservice", "hello world")
+    assert(service)
+    local service1 = snax.queryservice("snaxservice")
+    assert(service1 == service)
+    service.post.hello("MAIN_POST")
+    assert("MAIN_REQ" == service.req.hello("MAIN_REQ"))
+    return true    
+end
+
 skynet.start(function()
-	local testsuite_name = "skynet-mingw"
-	local testsuite = xunit(testsuite_name)
-	local sucess, watchdog = pcall(function ()
-		local watchdog = skynet.newservice("watchdog")
-		skynet.call(watchdog, "lua", "start", {
-			port = 8888,
-			maxclient = max_client,
-			nodelay = true,
-		})
-		return watchdog;
-	end)
-	testsuite:add("startwatchdog", sucess and watchdog, watchdog)
-	-- testsuite:add("testdemo1", false, "test!")
-	-- testsuite:add("testdemo2", true, "test!")
-
-	testsuite:save("xunit_results.xml")
-	os.exit(testsuite:allpass() and 0 or 1)
+    test("start watchdog", start_watchdog)
+    test("test skynet api", test_skynet_api)
+    test("test snax api", test_snax_api)
+    print("Test finished...")
+    skynet.abort()
 end)
-

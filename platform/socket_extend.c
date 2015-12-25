@@ -125,7 +125,7 @@ int getsockopt_extend_voidptr(SOCKET s, int level, int optname, void* optval, in
 
 int setsockopt_extend_voidptr(SOCKET s, int level, int optname, const void* optval, int optlen)
 {
-    return(s, level, optname, (char*)optval, optlen);
+    return setsockopt(s, level, optname, (char*)optval, optlen);
 }
 
 
