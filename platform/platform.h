@@ -9,6 +9,8 @@
 
 struct sigaction {
 	void (*sa_handler)(int);
+	sigset_t sa_mask;              
+    int sa_flags;    
 };
 enum { SIGPIPE };
 void sigaction(int flag, struct sigaction *action, int param);
