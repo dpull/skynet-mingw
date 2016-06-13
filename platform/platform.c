@@ -48,6 +48,16 @@ char *strsep(char **stringp, const char *delim) {
     /* NOTREACHED */
 }
 
+int sigfillset(sigset_t *set) {
+  /*Not implemented*/
+  return 0;  
+}
+
+int sigaction(int sig, const struct sigaction *act, struct sigaction *oact) {
+  /*Not implemented*/
+  return 0;
+}
+
 int clock_gettime(int what, struct timespec *ti) {
    __int64 wintime; 
    GetSystemTimeAsFileTime((FILETIME*)&wintime);
@@ -99,10 +109,6 @@ int kill(pid_t pid, int exit_code) {
 int daemon(int a, int b) {
   /*Not implemented*/
   return 0;
-}
-
-void sigaction(int flag, struct sigaction *action, int param) {
-  /*Not implemented*/
 }
 
 int flock(int fd, int flag) {
