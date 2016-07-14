@@ -25,6 +25,7 @@ build_script:
 
     Set Path=%path%;C:\MinGW\msys\1.0\bin;C:\MinGW\bin
 
+    mingw-get update
     mingw-get install mingw32-pthreads-w32-dev
 
     make
