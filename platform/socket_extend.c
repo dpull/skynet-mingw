@@ -131,5 +131,11 @@ int setsockopt_extend_voidptr(SOCKET s, int level, int optname, const void* optv
 
 int recvfrom_extend_voidptr(SOCKET s, void* buf, int len, int flags, struct sockaddr* from, int* fromlen)
 {
-    return recvfrom(s, (char*)buf, len, flags, from, fromlen);
+    int ret = recvfrom(s, (char*)buf, len, flags, from, fromlen);
+	if (ret == SOCKET_ERROR)  {
+		errno = WSAGetLastError();
+		if (errno == WSAEWOULDBLOCK)
+			errno = EAGAIN;
+	}
+	return ret;
 }
