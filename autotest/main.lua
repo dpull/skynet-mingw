@@ -12,7 +12,8 @@ local function start_watchdog()
         maxclient = max_client,
         nodelay = true,
     })
-    assert(watchdog)    
+    assert(watchdog) 
+    skynet.kill(watchdog)
     return true
 end
 
@@ -23,6 +24,9 @@ local function test_skynet_api()
     assert(service1)
     skynet.send(service, "lua", "send_func", "MAIN_SEND")
     assert("MAIN_CALL" == skynet.call(service, "lua", "call_func", "MAIN_CALL"))
+
+    skynet.kill(service1)
+    skynet.kill(service)
     return true
 end
 
@@ -33,6 +37,9 @@ local function test_snax_api()
     assert(service1 == service)
     service.post.hello("MAIN_POST")
     assert("MAIN_REQ" == service.req.hello("MAIN_REQ"))
+
+    snax.kill(service1)
+    snax.kill(service)
     return true    
 end
 
@@ -42,4 +49,6 @@ skynet.start(function()
     test("test snax api", test_snax_api)
     print("Test finished...")
     skynet.abort()
+    
+    os.exit(true)
 end)
