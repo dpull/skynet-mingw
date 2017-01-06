@@ -136,6 +136,8 @@ int recvfrom_extend_voidptr(SOCKET s, void* buf, int len, int flags, struct sock
 		errno = WSAGetLastError();
 		if (errno == WSAEWOULDBLOCK)
 			errno = EAGAIN;
+		if (errno == WSAECONNRESET)
+			errno = EAGAIN;
 	}
 	return ret;
 }
