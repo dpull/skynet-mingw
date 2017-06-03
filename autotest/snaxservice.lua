@@ -1,5 +1,5 @@
 local skynet = require "skynet"
-local snax = require "snax"
+local snax = require "skynet.snax"
 
 local msg = "I am a snax service"
 

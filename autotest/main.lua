@@ -1,6 +1,6 @@
 local skynet = require "skynet"
 local test = require "xunit"
-local snax = require "snax"
+local snax = require "skynet.snax"
 require "skynet.manager"
 
 local max_client = 64
