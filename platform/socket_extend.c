@@ -28,6 +28,18 @@ THE SOFTWARE.
 #include <conio.h>
 #include <errno.h>
 
+int newsocket_extend(int af, int type, int protocol)
+{
+	SOCKET s = socket(af, type, protocol);
+	if (s == INVALID_SOCKET)
+	{
+		errno = WSAGetLastError();
+		return -1;
+	}
+
+	return s;
+}
+
 int write_extend_socket(int fd, const void* buffer, size_t sz) 
 {
 	int ret = send_extend_errno(fd, (const char*)buffer, sz, 0);
@@ -105,7 +117,46 @@ failed:
     return -1;
 }
 
-int connect_extend_errno(SOCKET s, const struct sockaddr* name, int namelen)
+int bind_extend_socket(SOCKET s, const struct sockaddr *name, int namelen)
+{
+	int ret = bind(s, name, namelen);
+	if (ret == SOCKET_ERROR)
+	{
+		errno = WSAGetLastError();
+		return -1;
+	}
+
+	return ret;
+}
+
+int listen_extend_socket(SOCKET s, int backlog)
+{
+	int ret = listen(s, backlog);
+	if (ret == SOCKET_ERROR)
+	{
+		errno = WSAGetLastError();
+		return -1;
+	}
+
+	return ret;
+}
+
+int accept_extend_socket(SOCKET s, struct sockaddr *addr, int *addrlen)
+{
+	SOCKET newsock = accept(s, addr, addrlen);
+	if (newsock == INVALID_SOCKET)
+	{
+		errno = WSAGetLastError();
+		if (errno == WSAEWOULDBLOCK)
+			errno = EAGAIN;
+
+		return -1;
+	}
+
+	return newsock;
+}
+
+int connect_extend_socket(SOCKET s, const struct sockaddr *name, int namelen)
 {
 	int ret = connect(s, name, namelen);
 	if (ret == SOCKET_ERROR)  {
@@ -147,7 +198,6 @@ int setsockopt_extend_voidptr(SOCKET s, int level, int optname, const void* optv
 {
     return setsockopt(s, level, optname, (char*)optval, optlen);
 }
-
 
 int recvfrom_extend_voidptr(SOCKET s, void* buf, int len, int flags, struct sockaddr* from, int* fromlen)
 {

@@ -17,8 +17,15 @@ PLATFORM_INC ?= platform
 CFLAGS := -g -O2 -Wall -I$(PLATFORM_INC) -I$(LUA_INC) $(MYCFLAGS)
 # CFLAGS += -DUSE_PTHREAD_LOCK
 
+# Env arch bits check
+MACHINE_ARCH_INFO="`ls /mingw/lib/gcc/`"
+MACHINE_ARCH_IS_64BIT=$(if $(shell echo "${MACHINE_ARCH_INFO}" | grep '64'),TRUE,FALSE)
+
 # link
-LDFLAGS := -llua53 -lplatform -lpthread -lws2_32 -L$(SKYNET_BUILD_PATH)
+LDFLAGS := -llua53 -lplatform -lpthread -lws2_32 -lpsapi -L$(SKYNET_BUILD_PATH)
+ifeq ($(MACHINE_ARCH_IS_64BIT),TRUE)
+  LDFLAGS += -ldl -lpsapi
+endif
 SHARED := --shared
 EXPORT := -Wl,-E
 SHAREDLDFLAGS := -llua53 -lskynet -lplatform -lws2_32 -L$(SKYNET_BUILD_PATH)
@@ -61,7 +68,7 @@ SKYNET_EXE_SRC = skynet_main.c
 SKYNET_SRC = skynet_handle.c skynet_module.c skynet_mq.c \
   skynet_server.c skynet_start.c skynet_timer.c skynet_error.c \
   skynet_harbor.c skynet_env.c skynet_monitor.c skynet_socket.c socket_server.c \
-  malloc_hook.c skynet_daemon.c skynet_log.c
+  malloc_hook.c skynet_daemon.c skynet_log.c skynet_condition.c
 
 $(SKYNET_BUILD_PATH)/platform.dll : platform/platform.c platform/epoll.c platform/socket_poll.c platform/socket_extend.c
 	$(CC) $(CFLAGS) $(SHARED) $^ -lws2_32 -lwsock32 -o $@ -DDONOT_USE_IO_EXTEND -DFD_SETSIZE=1024

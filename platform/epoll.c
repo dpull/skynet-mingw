@@ -20,6 +20,7 @@ THE SOFTWARE.
 
 #include "epoll.h"
 #include <Winsock2.h>
+#include <windows.h>
 #include <conio.h>
 #include <errno.h>
 #include <assert.h>
@@ -40,6 +41,82 @@ struct epoll_fd
     CRITICAL_SECTION lock;
 };
 
+#if __x86_64__ || _M_X64
+struct epfd_alloc_ctx_t
+{
+    int epfds_size;
+    int epfds_used;
+    int epfd_alloc_begin;
+    CRITICAL_SECTION lock;
+    struct epoll_fd **epfds;
+};
+static struct epfd_alloc_ctx_t *epfd_alloc_ctx = NULL;
+
+static inline struct epfd_alloc_ctx_t *check_epfd_alloc_ctx()
+{
+    struct epfd_alloc_ctx_t *ctx;
+    if (epfd_alloc_ctx == NULL)
+    {
+        ctx = (struct epfd_alloc_ctx_t *)malloc(sizeof(struct epfd_alloc_ctx_t));
+
+        ctx->epfds_size = 10;
+        ctx->epfds_used = 0;
+        ctx->epfd_alloc_begin = 65536;
+        ctx->epfds = (struct epoll_fd **)malloc(sizeof(struct epoll_fd *) * ctx->epfds_size);
+        InitializeCriticalSectionAndSpinCount(&ctx->lock, 4000);
+
+        epfd_alloc_ctx = ctx;
+    }
+    else
+    {
+        ctx = epfd_alloc_ctx;
+    }
+
+    if (ctx->epfds_used == ctx->epfds_size)
+    {
+        ctx->epfds_size += 10;
+        ctx->epfds = (struct epoll_fd **)realloc(ctx->epfds, sizeof(struct epoll_fd *) * ctx->epfds_size);
+    }
+
+    return ctx;
+}
+
+static inline int alloc_epfd(struct epoll_fd *epfd_ptr)
+{
+    struct epfd_alloc_ctx_t *ctx = check_epfd_alloc_ctx();
+
+    EnterCriticalSection(&ctx->lock);
+
+    ctx->epfds[ctx->epfds_used++] = epfd_ptr;
+    int epfd = ctx->epfds_used;
+    
+    LeaveCriticalSection(&ctx->lock);
+
+    return epfd + ctx->epfd_alloc_begin;
+}
+
+static inline struct epoll_fd *get_epoll_fd_ptr(int epfd)
+{
+    struct epfd_alloc_ctx_t *ctx = check_epfd_alloc_ctx();
+
+    epfd -= ctx->epfd_alloc_begin;
+    EnterCriticalSection(&ctx->lock);
+    if (epfd > ctx->epfds_used || epfd <= 0)
+    {
+        LeaveCriticalSection(&ctx->lock);
+        return NULL;
+    }
+
+    struct epoll_fd *epfd_ptr = ctx->epfds[epfd - 1];
+    LeaveCriticalSection(&ctx->lock);
+
+    return epfd_ptr;
+}
+#else
+#define alloc_epfd(epfd_ptr)   ((int)epfd_ptr)
+#define get_epoll_fd_ptr(epfd) ((struct epoll_fd *)epfd)
+#endif
+
 int epoll_startup()
 {
     WSADATA wsadata;
@@ -51,8 +128,6 @@ http://linux.die.net/man/2/epoll_create
 */
 int epoll_create(int size)
 {
-    assert(sizeof(struct epoll_fd*) <= sizeof(int));
-
     if(size < 0 || size > FD_SETSIZE) {
         errno = EINVAL;
         return 0;
@@ -65,13 +140,12 @@ int epoll_create(int size)
     epoll_fd->fds = (struct fd_t*)malloc(sizeof(*(epoll_fd->fds)) * size);
     InitializeCriticalSectionAndSpinCount(&epoll_fd->lock, 4000);
 
-
     memset(epoll_fd->fds, 0, sizeof(*(epoll_fd->fds)) * size);
     for (int i = 0; i < size; ++i) {
         epoll_fd->fds[i].fd = INVALID_SOCKET;
     }
 
-    return (int)epoll_fd;
+    return alloc_epfd(epoll_fd);
 }
 
 
@@ -137,7 +211,7 @@ http://linux.die.net/man/2/epoll_ctl
 int epoll_ctl(int epfd, int opcode, int fd, struct epoll_event* event)
 {
     int error = ENOENT;
-    struct epoll_fd* epoll_fd = (struct epoll_fd*)epfd;
+    struct epoll_fd* epoll_fd = get_epoll_fd_ptr(epfd);
     EnterCriticalSection(&epoll_fd->lock);
     switch (opcode) {
         case EPOLL_CTL_ADD:
@@ -222,14 +296,14 @@ http://linux.die.net/man/2/epoll_wait
 */
 int epoll_wait(int epfd, struct epoll_event* events, int maxevents, int timeout)
 {
-    struct epoll_fd* epoll_fd = (struct epoll_fd*)epfd;
+    struct epoll_fd* epoll_fd = get_epoll_fd_ptr(epfd);
 
     EnterCriticalSection(&epoll_fd->lock);
     epoll_wait_init(epoll_fd);
     LeaveCriticalSection(&epoll_fd->lock);
 
     struct timeval wait_time = {timeout / 1000, 1000 * (timeout % 1000)};
-    int total = select(1, &epoll_fd->readfds, &epoll_fd->writefds, &epoll_fd->exceptfds, timeout >= 0 ? &wait_time : NULL);  
+    int total = select(1, &epoll_fd->readfds, &epoll_fd->writefds, &epoll_fd->exceptfds, timeout >= 0 ? &wait_time : NULL);
     if (total == 0)
         return 0;
 
@@ -247,7 +321,7 @@ int epoll_wait(int epfd, struct epoll_event* events, int maxevents, int timeout)
 
 int epoll_close(int epfd)
 {
-    struct epoll_fd* epoll_fd = (struct epoll_fd*)epfd;
+    struct epoll_fd* epoll_fd = get_epoll_fd_ptr(epfd);
     DeleteCriticalSection(&epoll_fd->lock);
     free(epoll_fd->fds);
 	free(epoll_fd);
