@@ -19,6 +19,7 @@ struct sigaction {
 enum { SIGPIPE };
 
 int sigfillset(sigset_t *set);
+int sigemptyset(sigset_t *set);
 int sigaction(int sig, const struct sigaction *act, struct sigaction *oact);
 /*<signal.h>*/
 

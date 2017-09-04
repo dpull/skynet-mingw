@@ -73,6 +73,11 @@ int sigfillset(sigset_t *set) {
   return 0;  
 }
 
+int sigemptyset(sigset_t *set) {
+  /*Not implemented*/
+  return 0;  
+}
+
 int sigaction(int sig, const struct sigaction *act, struct sigaction *oact) {
   /*Not implemented*/
   return 0;
