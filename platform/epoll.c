@@ -43,11 +43,11 @@ struct epoll_fd
 
 struct epoll_fd_ctx
 {
-    int epfds_size;
-    int epfds_used;
-    int epfd_start_index;
+    int reserved_size;
+    int used_size;
+    int epfd_offset;
+    struct epoll_fd** epoll_fd_container;
     CRITICAL_SECTION lock;
-    struct epoll_fd** epfds;
 };
 
 static struct epoll_fd_ctx* epoll_fd_ctx = NULL;
@@ -57,10 +57,10 @@ static void epoll_fd_ctx_create()
     assert(epoll_fd_ctx == NULL);
 
     struct epoll_fd_ctx* ctx = (struct epoll_fd_ctx*)malloc(sizeof(struct epoll_fd_ctx));
-    ctx->epfds_size = 2;
-    ctx->epfds_used = 0;
-    ctx->epfd_start_index = 65536;
-    ctx->epfds = (struct epoll_fd**)malloc(sizeof(struct epoll_fd*) * ctx->epfds_size);
+    ctx->reserved_size = 2;
+    ctx->used_size = 0;
+    ctx->epfd_offset = 65536;
+    ctx->epoll_fd_container = (struct epoll_fd**)malloc(sizeof(struct epoll_fd*) * ctx->reserved_size);
     InitializeCriticalSectionAndSpinCount(&ctx->lock, 4000);
 
     epoll_fd_ctx = ctx;
@@ -70,57 +70,70 @@ static void epoll_fd_ctx_destory()
 {
     if (epoll_fd_ctx) {
 /*        
-        for (int i = 0; i < epoll_fd_ctx->epfds_used; ++i) {
-            assert(epoll_fd_ctx->epfds[i] == NULL);
+        for (int i = 0; i < epoll_fd_ctx->used_size; ++i) {
+            assert(epoll_fd_ctx->epoll_fd_container[i] == NULL);
         }
 */        
         DeleteCriticalSection(&epoll_fd_ctx->lock);
-        free(epoll_fd_ctx->epfds);
+        free(epoll_fd_ctx->epoll_fd_container);
         free(epoll_fd_ctx);
         epoll_fd_ctx = NULL;
     }
 }
 
-static int epoll_fd_ctx_add_epoll_fd(struct epoll_fd* epoll_fd)
+static int epoll_fd_ctx_free_index()
 {
-    int epfd = -1;
-    EnterCriticalSection(&epoll_fd_ctx->lock);
+    for (int i = 0; i < epoll_fd_ctx->used_size; ++i) {
+        if (epoll_fd_ctx->epoll_fd_container[i] == NULL)
+            return i;
+    }
 
-    if (epoll_fd_ctx->epfds_used == epoll_fd_ctx->epfds_size) {
-        int epfds_size = epoll_fd_ctx->epfds_size + 2;
-        
-        
-        struct epoll_fd** epfds = (struct epoll_fd**)realloc(epoll_fd_ctx->epfds, sizeof(struct epoll_fd*) * epfds_size);
-        if (epfds) {
-            epoll_fd_ctx->epfds_size = epfds_size;
-            epoll_fd_ctx->epfds = epfds;
+    if (epoll_fd_ctx->used_size == epoll_fd_ctx->reserved_size) {
+        int reserved_size = epoll_fd_ctx->reserved_size + 2;
+
+        struct epoll_fd** epoll_fd_container = (struct epoll_fd**)realloc(epoll_fd_ctx->epoll_fd_container, sizeof(struct epoll_fd*) * reserved_size);
+        if (epoll_fd_container) {
+            epoll_fd_ctx->reserved_size = reserved_size;
+            epoll_fd_ctx->epoll_fd_container = epoll_fd_container;
         }
     }
 
-    if (epoll_fd_ctx->epfds_used < epoll_fd_ctx->epfds_size) {
-        epfd = epoll_fd_ctx->epfds_used;
-        epoll_fd_ctx->epfds[epfd] = epoll_fd;
-        epoll_fd_ctx->epfds_used++;
-        epfd += epoll_fd_ctx->epfd_start_index;
+    int epfd = -1;
+    if (epoll_fd_ctx->used_size < epoll_fd_ctx->reserved_size) {
+        epfd = epoll_fd_ctx->used_size;
+        epoll_fd_ctx->epoll_fd_container[epfd] = NULL;
+        epoll_fd_ctx->used_size++;
     }
-    LeaveCriticalSection(&epoll_fd_ctx->lock);
+    return epfd;
+}
 
+static int epoll_fd_ctx_add_epoll_fd(struct epoll_fd* epoll_fd)
+{
+    EnterCriticalSection(&epoll_fd_ctx->lock);
+
+    int epfd = epoll_fd_ctx_free_index();
+    if (epfd >= 0) {
+        epoll_fd_ctx->epoll_fd_container[epfd] = epoll_fd;
+    }
+    epfd += epoll_fd_ctx->epfd_offset;
+
+    LeaveCriticalSection(&epoll_fd_ctx->lock);
     return epfd;
 }
 
 static struct epoll_fd *epoll_fd_ctx_get_epoll_fd(int epfd, int remove_flag)
 {
     struct epoll_fd *epoll_fd = NULL;
-
     EnterCriticalSection(&epoll_fd_ctx->lock);
-    epfd -= epoll_fd_ctx->epfd_start_index;
-    if (epfd >= 0 && epfd < epoll_fd_ctx->epfds_used) {
-        epoll_fd = epoll_fd_ctx->epfds[epfd];
-        if (remove_flag)
-            epoll_fd_ctx->epfds[epfd] = NULL;
-    }
-    LeaveCriticalSection(&epoll_fd_ctx->lock);
 
+    epfd -= epoll_fd_ctx->epfd_offset;
+    if (epfd >= 0 && epfd < epoll_fd_ctx->used_size) {
+        epoll_fd = epoll_fd_ctx->epoll_fd_container[epfd];
+        if (remove_flag)
+            epoll_fd_ctx->epoll_fd_container[epfd] = NULL;
+    }
+    
+    LeaveCriticalSection(&epoll_fd_ctx->lock);
     return epoll_fd;
 }
 
