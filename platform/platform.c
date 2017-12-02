@@ -25,20 +25,19 @@ THE SOFTWARE.
 #include <WS2tcpip.h>
 #include <errno.h>
 #include <fcntl.h>
+#include "epoll.h"
 
 #define IN6ADDRSZ 16 
 #define INT16SZ 2
 
-BOOL APIENTRY DllMain( HANDLE hModule, DWORD  ul_reason_for_call,  LPVOID lpReserved) {
+BOOL APIENTRY DllMain(HANDLE hModule, DWORD  ul_reason_for_call,  LPVOID lpReserved) {
   switch (ul_reason_for_call) {
-  case DLL_PROCESS_ATTACH: {
-    WSADATA wsadata;
-    WSAStartup(MAKEWORD(2, 2), &wsadata);
-  }
-  break;
+  case DLL_PROCESS_ATTACH: 
+    epoll_startup();
+    break;
 
   case DLL_PROCESS_DETACH:
-    WSACleanup();
+    epoll_cleanup();
     break;
   }
   return TRUE;

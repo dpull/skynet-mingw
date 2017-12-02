@@ -20,6 +20,7 @@ THE SOFTWARE.
 
 #include "epoll.h"
 #include <Winsock2.h>
+#include <Windows.h>
 #include <conio.h>
 #include <errno.h>
 #include <assert.h>
@@ -40,8 +41,93 @@ struct epoll_fd
     CRITICAL_SECTION lock;
 };
 
+struct epoll_fd_ctx
+{
+    int epfds_size;
+    int epfds_used;
+    int epfd_start_index;
+    CRITICAL_SECTION lock;
+    struct epoll_fd** epfds;
+};
+
+static struct epoll_fd_ctx* epoll_fd_ctx = NULL;
+
+static void epoll_fd_ctx_create()
+{
+    assert(epoll_fd_ctx == NULL);
+
+    struct epoll_fd_ctx* ctx = (struct epoll_fd_ctx*)malloc(sizeof(struct epoll_fd_ctx));
+    ctx->epfds_size = 2;
+    ctx->epfds_used = 0;
+    ctx->epfd_start_index = 65536;
+    ctx->epfds = (struct epoll_fd**)malloc(sizeof(struct epoll_fd*) * ctx->epfds_size);
+    InitializeCriticalSectionAndSpinCount(&ctx->lock, 4000);
+
+    epoll_fd_ctx = ctx;
+}
+
+static void epoll_fd_ctx_destory()
+{
+    if (epoll_fd_ctx) {
+/*        
+        for (int i = 0; i < epoll_fd_ctx->epfds_used; ++i) {
+            assert(epoll_fd_ctx->epfds[i] == NULL);
+        }
+*/        
+        DeleteCriticalSection(&epoll_fd_ctx->lock);
+        free(epoll_fd_ctx->epfds);
+        free(epoll_fd_ctx);
+        epoll_fd_ctx = NULL;
+    }
+}
+
+static int epoll_fd_ctx_add_epoll_fd(struct epoll_fd* epoll_fd)
+{
+    int epfd = -1;
+    EnterCriticalSection(&epoll_fd_ctx->lock);
+
+    if (epoll_fd_ctx->epfds_used == epoll_fd_ctx->epfds_size) {
+        int epfds_size = epoll_fd_ctx->epfds_size + 2;
+        
+        
+        struct epoll_fd** epfds = (struct epoll_fd**)realloc(epoll_fd_ctx->epfds, sizeof(struct epoll_fd*) * epfds_size);
+        if (epfds) {
+            epoll_fd_ctx->epfds_size = epfds_size;
+            epoll_fd_ctx->epfds = epfds;
+        }
+    }
+
+    if (epoll_fd_ctx->epfds_used < epoll_fd_ctx->epfds_size) {
+        epfd = epoll_fd_ctx->epfds_used;
+        epoll_fd_ctx->epfds[epfd] = epoll_fd;
+        epoll_fd_ctx->epfds_used++;
+        epfd += epoll_fd_ctx->epfd_start_index;
+    }
+    LeaveCriticalSection(&epoll_fd_ctx->lock);
+
+    return epfd;
+}
+
+static struct epoll_fd *epoll_fd_ctx_get_epoll_fd(int epfd, int remove_flag)
+{
+    struct epoll_fd *epoll_fd = NULL;
+
+    EnterCriticalSection(&epoll_fd_ctx->lock);
+    epfd -= epoll_fd_ctx->epfd_start_index;
+    if (epfd >= 0 && epfd < epoll_fd_ctx->epfds_used) {
+        epoll_fd = epoll_fd_ctx->epfds[epfd];
+        if (remove_flag)
+            epoll_fd_ctx->epfds[epfd] = NULL;
+    }
+    LeaveCriticalSection(&epoll_fd_ctx->lock);
+
+    return epoll_fd;
+}
+
 int epoll_startup()
 {
+    epoll_fd_ctx_create();
+
     WSADATA wsadata;
     return WSAStartup(MAKEWORD(2, 2), &wsadata);
 }
@@ -51,8 +137,6 @@ http://linux.die.net/man/2/epoll_create
 */
 int epoll_create(int size)
 {
-    assert(sizeof(struct epoll_fd*) <= sizeof(int));
-
     if(size < 0 || size > FD_SETSIZE) {
         errno = EINVAL;
         return 0;
@@ -65,13 +149,18 @@ int epoll_create(int size)
     epoll_fd->fds = (struct fd_t*)malloc(sizeof(*(epoll_fd->fds)) * size);
     InitializeCriticalSectionAndSpinCount(&epoll_fd->lock, 4000);
 
-
     memset(epoll_fd->fds, 0, sizeof(*(epoll_fd->fds)) * size);
     for (int i = 0; i < size; ++i) {
         epoll_fd->fds[i].fd = INVALID_SOCKET;
     }
 
-    return (int)epoll_fd;
+    int epfd = epoll_fd_ctx_add_epoll_fd(epoll_fd);
+    if (epfd < 0) {
+        DeleteCriticalSection(&epoll_fd->lock);
+        free(epoll_fd->fds);
+        free(epoll_fd);
+    }
+    return epfd;
 }
 
 
@@ -137,7 +226,7 @@ http://linux.die.net/man/2/epoll_ctl
 int epoll_ctl(int epfd, int opcode, int fd, struct epoll_event* event)
 {
     int error = ENOENT;
-    struct epoll_fd* epoll_fd = (struct epoll_fd*)epfd;
+    struct epoll_fd* epoll_fd = epoll_fd_ctx_get_epoll_fd(epfd, 0);
     EnterCriticalSection(&epoll_fd->lock);
     switch (opcode) {
         case EPOLL_CTL_ADD:
@@ -222,14 +311,14 @@ http://linux.die.net/man/2/epoll_wait
 */
 int epoll_wait(int epfd, struct epoll_event* events, int maxevents, int timeout)
 {
-    struct epoll_fd* epoll_fd = (struct epoll_fd*)epfd;
+    struct epoll_fd* epoll_fd = epoll_fd_ctx_get_epoll_fd(epfd, 0);
 
     EnterCriticalSection(&epoll_fd->lock);
     epoll_wait_init(epoll_fd);
     LeaveCriticalSection(&epoll_fd->lock);
 
     struct timeval wait_time = {timeout / 1000, 1000 * (timeout % 1000)};
-    int total = select(1, &epoll_fd->readfds, &epoll_fd->writefds, &epoll_fd->exceptfds, timeout >= 0 ? &wait_time : NULL);  
+    int total = select(1, &epoll_fd->readfds, &epoll_fd->writefds, &epoll_fd->exceptfds, timeout >= 0 ? &wait_time : NULL);
     if (total == 0)
         return 0;
 
@@ -245,16 +334,19 @@ int epoll_wait(int epfd, struct epoll_event* events, int maxevents, int timeout)
     return count;
 }
 
+#include "stdio.h"
 int epoll_close(int epfd)
 {
-    struct epoll_fd* epoll_fd = (struct epoll_fd*)epfd;
+    struct epoll_fd* epoll_fd = epoll_fd_ctx_get_epoll_fd(epfd, 1);
+
     DeleteCriticalSection(&epoll_fd->lock);
     free(epoll_fd->fds);
-	free(epoll_fd);
+    free(epoll_fd);
     return 0;
 }
 
 void epoll_cleanup()
 {
     WSACleanup();
+    epoll_fd_ctx_destory();
 }
