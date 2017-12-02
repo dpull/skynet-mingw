@@ -21,8 +21,8 @@ THE SOFTWARE.
 #include "platform.h"
 #include <stdlib.h>
 #include <stdio.h>
-#include <windows.h>
-#include <ws2tcpip.h>
+#include <Windows.h>
+#include <WS2tcpip.h>
 #include <errno.h>
 #include <fcntl.h>
 

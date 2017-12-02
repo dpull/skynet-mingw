@@ -6,6 +6,12 @@
 #include <WinSock2.h>
 #include <WS2tcpip.h>
 
+#ifndef EWOULDBLOCK
 #define EWOULDBLOCK WSAEWOULDBLOCK
+#endif
+
+#ifndef EINPROGRESS
 #define EINPROGRESS WSAEINPROGRESS
+#endif
+
 #undef near
