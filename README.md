@@ -28,7 +28,7 @@
 ./3rd/lua/lua examples/client.lua   # Launch a client, and try to input hello.
 ```
 
-存在的问题
+## 已知问题
 
 1. console服务不可用(无法对stdin进行select)， 会提示如下出错信息，暂时没有解决方案。
 
@@ -41,7 +41,7 @@ stack traceback:
         ./lualib/skynet.lua:105: in function <./lualib/skynet.lua:104>
 ```
 
-2. 使用`skynet.abort`无法退出，看堆栈卡在了系统中，暂时没有解决方案。
+2. 使用`skynet.abort`无法退出，看堆栈卡在了系统中，暂时没有解决方案。（替代方案`os.exit(true)`）
 
 ```bash
 #0  0x77bd718c in ntdll!ZwWaitForMultipleObjects () from C:\WINDOWS\SYSTEM32\ntdll.dll
