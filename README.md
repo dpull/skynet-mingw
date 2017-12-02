@@ -24,7 +24,7 @@
 ## 测试
 
 ```bash
-./skynet.exe examples/config    # Launch first skynet node  (Gate server) and a skynet-master (see config for standalone option)
+./skynet.exe examples\\config    # Launch first skynet node  (Gate server) and a skynet-master (see config for standalone option)
 ./3rd/lua/lua examples/client.lua   # Launch a client, and try to input hello.
 ```
 
