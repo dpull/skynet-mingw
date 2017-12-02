@@ -82,7 +82,7 @@ int sigaction(int sig, const struct sigaction *act, struct sigaction *oact) {
   return 0;
 }
 
-int clock_gettime(int what, struct timespec *ti) {
+int clock_gettime_platform(int what, struct timespec *ti) {
    __int64 wintime; 
    GetSystemTimeAsFileTime((FILETIME*)&wintime);
    wintime      -=116444736000000000;  //1jan1601 to 1jan1970
