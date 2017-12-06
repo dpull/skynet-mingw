@@ -347,7 +347,6 @@ int epoll_wait(int epfd, struct epoll_event* events, int maxevents, int timeout)
     return count;
 }
 
-#include "stdio.h"
 int epoll_close(int epfd)
 {
     struct epoll_fd* epoll_fd = epoll_fd_ctx_get_epoll_fd(epfd, 1);
