@@ -51,11 +51,13 @@ int fcntl(int fd, int cmd, long arg);
 
 typedef int poll_fd;
 
+/*skynet/skynet-src/socket_poll.h*/
 struct event {
 	void * s;
 	bool read;
 	bool write;
 	bool error;
+	bool eof;
 };
 
 bool sp_invalid(poll_fd fd);
