@@ -8,7 +8,7 @@
 4. 编译系统使用msys2。
 
 ## 编译
-1. 安装 msys2(https://github.com/msys2/msys2)，地址（https://github.com/msys2/msys2/wiki/MSYS2-installation）。
+1. 安装 [msys2](https://github.com/msys2/msys2), [下载地址](https://github.com/msys2/msys2/wiki/MSYS2-installation)。
 2. 安装 gcc make git
 ```bash
 pacman -S gcc
