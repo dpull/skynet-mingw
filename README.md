@@ -15,7 +15,7 @@ pacman -S gcc
 pacman -S make
 pacman -S git
 ```
-3. 克隆 git clone https://github.com/xiyoo0812/skynet-mingw
+3. 克隆 git clone https://github.com/xiyoo0812/skynet-windows
 4. 更新 git submodule update --init --recursive
 5. 准备 ./prepare.sh
 6. 修改 skynet会加载动态库，因为编译lua的时候需要修改mingw的编译配置，加上-DLUA_USE_DLOPEN选项。
