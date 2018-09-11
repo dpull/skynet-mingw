@@ -1,6 +1,6 @@
-# 关于skynet-mingw [![Build status](https://ci.appveyor.com/api/projects/status/9j45lldyxmfdau3r?svg=true)](https://ci.appveyor.com/project/xiyoo0812/skynet-mingw)
+# 关于skynet-windows [![Build status](https://ci.appveyor.com/api/projects/status/9j45lldyxmfdau3r?svg=true)](https://ci.appveyor.com/project/xiyoo0812/skynet-windows)
 
-[skynet-mingw](https://github.com/xiyoo0812/skynet-mingw) 是[skynet](https://github.com/cloudwu/skynet)的windows平台的实现。本项目从https://github.com/dpull/skynet-mingw fork而来，对此版本进行了优化和更新。其主要特点是：
+[skynet-windows](https://github.com/xiyoo0812/skynet-windows) 是 [skynet](https://github.com/cloudwu/skynet) 的windows平台的实现。本项目从[skynet-mingw](https://github.com/dpull/skynet-mingw) fork而来，对此版本进行了优化和更新。其主要特点是：
 
 1. skynet 以submodule链接，方便升级，**确保不改**。
 2. 仅扩展了700行代码，方便维护。
@@ -19,16 +19,23 @@ pacman -S git
 4. 更新 git submodule update --init --recursive
 5. 准备 ./prepare.sh
 6. 修改 skynet会加载动态库，因为编译lua的时候需要修改mingw的编译配置，加上-DLUA_USE_DLOPEN选项。
+```makefile
+mingw:
+	$(MAKE) "LUA_A=lua53.dll" "LUA_T=lua.exe" \
+	"AR=$(CC) -shared -o" "RANLIB=strip --strip-unneeded" \
+	"SYSCFLAGS=-DLUA_BUILD_AS_DLL **-DLUA_USE_DLOPEN**" "SYSLIBS=" "SYSLDFLAGS=-s" lua.exe
+	$(MAKE) "LUAC_T=luac.exe" luac.exe
+```
 7. 编译 make
 
 ## 常见问题
-1. 加载各种so报错，通常是由于lua库没有使用动态库选项，解决见上面第6步。
+1. 加载脚本的时候找不到so，通常是由于lua库没有使用动态库选项，解决见上面第6步。
 
 ## 测试
 
 ```bash
-./skynet.exe examples/config            # Launch first skynet node  (Gate server) and a skynet-master (see config for standalone option)
-./3rd/lua/lua examples/client.lua       # Launch a client, and try to input hello.
+./skynet.exe examples/config        # Launch first skynet node  (Gate server) and a skynet-master (see config for standalone option)
+./3rd/lua/lua examples/client.lua   # Launch a client, and try to input hello.
 ```
 
 ## 已知问题
