@@ -19,13 +19,11 @@ THE SOFTWARE.
 ****************************************************************************/
 
 #include "platform.h"
-#include <unistd.h>
 #include <sys/types.h>
 #include <fcntl.h>
 #include <assert.h>
 #include "sys/socket.h"
 #include <stdio.h>
-#include <conio.h>
 #include <errno.h>
 
 int write_extend_socket(int fd, const void* buffer, size_t sz) 
