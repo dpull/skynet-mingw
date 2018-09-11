@@ -5,6 +5,7 @@
 1. skynet 以submodule链接，方便升级，**确保不改**。
 2. 仅扩展了700行代码，方便维护。
 3. 自动更新skynet，自动构建，自动化测试，确保质量。
+4. 编译系统使用msys2。
 
 ## 编译
 1. 安装 msys2(https://github.com/msys2/msys2)，地址（https://github.com/msys2/msys2/wiki/MSYS2-installation）。
@@ -64,7 +65,8 @@ stack traceback:
 ```
 3. 启动的时候 skynet.readline 报错，有时间再看。
 ```bash
-[:0100000b] lua call [0 to :100000b : 0 msgsz = 56] error : ./lualib/skynet.lua:643: ./lualib/skynet.lua:197: ./lualib/skynet/socket.lua:311: assertion failed!
+[:0100000b] lua call [0 to :100000b : 0 msgsz = 56] error 
+: ./lualib/skynet.lua:643: ./lualib/skynet.lua:197: ./lualib/skynet/socket.lua:311: assertion failed!
 stack traceback:
         [C]: in function 'assert'
         ./lualib/skynet/socket.lua:311: in function 'skynet.socket.readline'
