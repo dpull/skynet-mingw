@@ -1,36 +1,38 @@
-# 关于skynet-mingw [![Build status](https://ci.appveyor.com/api/projects/status/9j45lldyxmfdau3r?svg=true)](https://ci.appveyor.com/project/dpull/skynet-mingw)
+# 关于skynet-mingw [![Build status](https://ci.appveyor.com/api/projects/status/9j45lldyxmfdau3r?svg=true)](https://ci.appveyor.com/project/xiyoo0812/skynet-mingw)
 
-[skynet-mingw](https://github.com/dpull/skynet-mingw) 是[skynet](https://github.com/cloudwu/skynet)的windows平台的实现。其主要特点是：
+[skynet-mingw](https://github.com/xiyoo0812/skynet-mingw) 是[skynet](https://github.com/cloudwu/skynet)的windows平台的实现。本项目从https://github.com/dpull/skynet-mingw fork而来，对此版本进行了优化和更新。其主要特点是：
 
 1. skynet 以submodule链接，方便升级，**确保不改**。
-1. 仅扩展了700行代码，方便维护。
-1. 自动更新skynet，自动构建，自动化测试，确保质量。
+2. 仅扩展了700行代码，方便维护。
+3. 自动更新skynet，自动构建，自动化测试，确保质量。
 
 ## 编译
-不想自行编译的朋友可访问 [自动构建平台获取最新的构建版本](https://ci.appveyor.com/project/dpull/skynet-mingw/build/artifacts)。
+1. 安装 msys2(https://github.com/msys2/msys2)，地址（https://github.com/msys2/msys2/wiki/MSYS2-installation）。
+2. 安装 gcc make git
+```bash
+pacman -S gcc
+pacman -S make
+pacman -S git
+```
+3. 克隆 git clone https://github.com/xiyoo0812/skynet-mingw
+4. 更新 git submodule update --init --recursive
+5. 准备 ./prepare.sh
+6. 修改 skynet会加载动态库，因为编译lua的时候需要修改mingw的编译配置，加上-DLUA_USE_DLOPEN选项。
+7. 编译 make
 
-1. 安装 [MinGW](http://sourceforge.net/projects/mingw/files/)
-1. 安装 `gcc g++`
-1. 安装 `pthread (dev)`
-1. 运行 `MinGW\msys\1.0\msys.bat`
-1. 运行 `prepare.sh`
-1. 运行 `make`
-
-### 常见问题
-1. 建议使用 `MinGW\msys\1.0\msys.bat` 进行编译
-1. 错误: `gcc: Command not found`, 解决: 修改 `msys\1.0\etc\fstab` 中的 `/mingw` 路径
-1. 当提示缺少类似`dlfcn.h`文件时，建议看看头文件搜索路径是否有问题，举个例子`perl(Strawberry Perl)`中有`gcc`程序，同时它注册了系统环境变量
+## 常见问题
+1. 加载各种so报错，通常是由于lua库没有使用动态库选项，解决见上面第6步。
 
 ## 测试
 
 ```bash
-./skynet.exe examples\\config    # Launch first skynet node  (Gate server) and a skynet-master (see config for standalone option)
-./3rd/lua/lua examples/client.lua   # Launch a client, and try to input hello.
+./skynet.exe examples/config            # Launch first skynet node  (Gate server) and a skynet-master (see config for standalone option)
+./3rd/lua/lua examples/client.lua       # Launch a client, and try to input hello.
 ```
 
 ## 已知问题
 
-1. console服务不可用(无法对stdin进行select)， 会提示如下出错信息，暂时没有解决方案。
+1. console服务不可用(无法对stdin进行select)， 会提示如下出错信息，暂时没有解决方案。（同dpull版本）
 
 ```bash
 stack traceback:
@@ -41,7 +43,7 @@ stack traceback:
         ./lualib/skynet.lua:105: in function <./lualib/skynet.lua:104>
 ```
 
-2. 使用`skynet.abort`无法退出，看堆栈卡在了系统中，暂时没有解决方案。（替代方案`os.exit(true)`）
+2. 使用 skynet.abort 无法退出，看堆栈卡在了系统中，暂时没有解决方案。（替代方案 os.exit(true) ）（同dpull版本）
 
 ```bash
 #0  0x77bd718c in ntdll!ZwWaitForMultipleObjects () from C:\WINDOWS\SYSTEM32\ntdll.dll
@@ -60,6 +62,15 @@ stack traceback:
 #13 0x0069fe30 in ?? ()
 #14 0x00000000 in ?? ()
 ```
-
-## 相关文档
-[开发笔记](http://www.dpull.com/blog/2015-11-08-skynet_mingw) 
+3. 启动的时候 skynet.readline 报错，有时间再看。
+```bash
+[:0100000b] lua call [0 to :100000b : 0 msgsz = 56] error : ./lualib/skynet.lua:643: ./lualib/skynet.lua:197: ./lualib/skynet/socket.lua:311: assertion failed!
+stack traceback:
+        [C]: in function 'assert'
+        ./lualib/skynet/socket.lua:311: in function 'skynet.socket.readline'
+        ./service/console.lua:16: in upvalue 'f'
+        ./lualib/skynet.lua:127: in function <./lualib/skynet.lua:126>
+stack traceback:
+        [C]: in function 'assert'
+        ./lualib/skynet.lua:643: in function 'skynet.dispatch_message'
+```
