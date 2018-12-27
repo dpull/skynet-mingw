@@ -152,7 +152,7 @@ int epoll_create(int size)
 {
     if(size < 0 || size > FD_SETSIZE) {
         errno = EINVAL;
-        return 0;
+        return -1;
     }
 
     struct epoll_fd* epoll_fd = (struct epoll_fd*)malloc(sizeof(*epoll_fd));
