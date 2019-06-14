@@ -27,7 +27,7 @@ SHAREDLDFLAGS := -llua53 -lskynet -lplatform -lws2_32 -L$(SKYNET_BUILD_PATH)
 
 CSERVICE = snlua logger gate harbor
 LUA_CLIB = skynet \
-  clientsocket \
+  client \
   bson md5 sproto lpeg
 
 LUA_CLIB_SKYNET = \
@@ -43,6 +43,9 @@ LUA_CLIB_SKYNET = \
   lua-sharedata.c \
   lua-stm.c \
   lua-debugchannel.c \
+  lua-datasheet.c \
+  lua-ssm.c \
+  lua-sharetable.c \
   \
 
 SKYNET_EXE_SRC = skynet_main.c
