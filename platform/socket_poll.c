@@ -61,6 +61,17 @@ sp_del(int efd, int sock) {
 	epoll_ctl(efd, EPOLL_CTL_DEL, sock , NULL);
 }
 
+int
+sp_enable(int efd, int sock, void *ud, bool read_enable, bool write_enable) {
+	struct epoll_event ev;
+	ev.events = (read_enable ? EPOLLIN : 0) | (write_enable ? EPOLLOUT : 0);
+	ev.data.ptr = ud;
+	if (epoll_ctl(efd, EPOLL_CTL_MOD, sock, &ev) == -1) {
+		return 1;
+	}
+	return 0;
+}
+
 void 
 sp_write(int efd, int sock, void *ud, bool enable) {
 	struct epoll_event ev;
