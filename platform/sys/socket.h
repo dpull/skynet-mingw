@@ -14,4 +14,8 @@
 #define EINPROGRESS WSAEINPROGRESS
 #endif
 
+#ifndef SHUT_RD
+#define SHUT_RD SD_RECEIVE
+#endif
+
 #undef near
