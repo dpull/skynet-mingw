@@ -22,10 +22,10 @@ CFLAGS := -g -O2 -Wall -I$(PLATFORM_INC) -I$(LUA_INC) $(MYCFLAGS)
 # CFLAGS += -DUSE_PTHREAD_LOCK
 
 # link
-LDFLAGS := -llua53 -lplatform -lpthread -lws2_32 -L$(SKYNET_BUILD_PATH)
+LDFLAGS := -llua54 -lplatform -lpthread -lws2_32 -L$(SKYNET_BUILD_PATH)
 SHARED := --shared
 EXPORT := -Wl,-E
-SHAREDLDFLAGS := -llua53 -lskynet -lplatform -lws2_32 -L$(SKYNET_BUILD_PATH)
+SHAREDLDFLAGS := -llua54 -lskynet -lplatform -lws2_32 -L$(SKYNET_BUILD_PATH)
 
 # skynet
 
@@ -77,7 +77,7 @@ $(SKYNET_BUILD_PATH)/skynet.exe : $(foreach v, $(SKYNET_EXE_SRC), skynet-src/$(v
 
 # lua
 $(LUA_STATICLIB) :
-	cd 3rd/lua && $(MAKE) CC='$(CC)' $(PLAT)  && cd - && cp -f $(LUA_INC)/lua53.dll $(SKYNET_BUILD_PATH)/lua53.dll
+	cd 3rd/lua && $(MAKE) CC='$(CC)' $(PLAT)  && cd - && cp -f $(LUA_INC)/lua54.dll $(SKYNET_BUILD_PATH)/lua54.dll
 
 $(LUA_CLIB_PATH) :
 	mkdir $(LUA_CLIB_PATH)
