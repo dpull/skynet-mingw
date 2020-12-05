@@ -21,7 +21,6 @@ THE SOFTWARE.
 #include "epoll.h"
 #include <Winsock2.h>
 #include <Windows.h>
-#include <conio.h>
 #include <errno.h>
 #include <assert.h>
 
