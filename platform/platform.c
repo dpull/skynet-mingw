@@ -82,12 +82,28 @@ int sigaction(int sig, const struct sigaction *act, struct sigaction *oact) {
   return 0;
 }
 
+// 获取毫秒时间
+__int64 __GetTickMs()
+{
+	static __int64 Freq = 0;
+	static __int64 Start = 0;
+	static __int64 StartTime = 0;
+	if(Freq==0){
+		StartTime = time(NULL);
+		QueryPerformanceFrequency((LARGE_INTEGER*)&Freq);
+		QueryPerformanceCounter((LARGE_INTEGER*)&Start);
+	}
+	__int64 Count = 0;
+	QueryPerformanceCounter((LARGE_INTEGER*)&Count);
+
+	//乘以1000，把秒化为毫秒
+	return (__int64)((double)(Count-Start) / (double)Freq*1000.0) + StartTime*1000;
+}
+
 int clock_gettime_platform(int what, struct timespec *ti) {
-   __int64 wintime; 
-   GetSystemTimeAsFileTime((FILETIME*)&wintime);
-   wintime      -=116444736000000000;  //1jan1601 to 1jan1970
-   ti->tv_sec  =wintime / 10000000;           //seconds
-   ti->tv_nsec =wintime % 10000000 *100;      //nano-seconds
+   __int64 now = __GetTickMs();
+   ti->tv_sec  = now / 1000;
+   ti->tv_nsec = (now - now/1000*1000)*1000*1000;
    return 0;
 }
 
