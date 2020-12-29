@@ -75,7 +75,7 @@ struct tm *localtime_r(const time_t *timer, struct tm *buf)
 	struct tm *tm = localtime(timer);
 	if (!tm)
 		return NULL;
-	memcpy(buf, tm, sizeof(*tm);
+	memcpy(buf, tm, sizeof(*tm));
 	return buf;
 }
 
