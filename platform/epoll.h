@@ -6,32 +6,28 @@
    This differs from epoll's behavior of allowing any fd. */
 
 enum EPOLL_EVENTS {
-    EPOLLIN      = 0x0001,
-    EPOLLOUT     = 0x0002,
-    EPOLLRDHUP   = 0x0004,
-    EPOLLPRI     = 0x0008,
-    EPOLLERR     = 0x0010,
-    EPOLLHUP     = 0x0020,
-    EPOLLET      = 0x0040,
-    EPOLLONESHOT = 0x0080
+	EPOLLIN = 0x0001,
+	EPOLLOUT = 0x0002,
+	EPOLLRDHUP = 0x0004,
+	EPOLLPRI = 0x0008,
+	EPOLLERR = 0x0010,
+	EPOLLHUP = 0x0020,
+	EPOLLET = 0x0040,
+	EPOLLONESHOT = 0x0080
 };
 
-enum EPOLL_OPCODES {
-    EPOLL_CTL_ADD,
-    EPOLL_CTL_DEL,
-    EPOLL_CTL_MOD
-};
+enum EPOLL_OPCODES { EPOLL_CTL_ADD, EPOLL_CTL_DEL, EPOLL_CTL_MOD };
 
 typedef union epoll_data {
-    void* ptr;
-    int fd;
-    unsigned int u32;
-    unsigned long long u64;
+	void *ptr;
+	int fd;
+	unsigned int u32;
+	unsigned long long u64;
 } epoll_data_t;
 
 struct epoll_event {
-    unsigned int events;
-    epoll_data_t data;
+	unsigned int events;
+	epoll_data_t data;
 };
 
 /*
@@ -69,7 +65,7 @@ Description: Control a epoll descriptor, epfd, by requesting that the operation 
                object linked to the file descriptor fd.
              Returns zero on success, or -1 on error.
 */
-int epoll_ctl(int epfd, int opcode, int fd, struct epoll_event* event);
+int epoll_ctl(int epfd, int opcode, int fd, struct epoll_event *event);
 
 /*
 Function:    int epoll_wait(int epfd, struct epoll_event* events, int maxevents, int timeout)
@@ -82,7 +78,8 @@ Description: Wait for events on the epoll file descriptor epfd for a maximum tim
              Returns the number of file descriptors ready for the requested I/O, zero if
                no file descriptor became ready before the requested timeout, or -1 on error.
 */
-int epoll_wait(int epfd, struct epoll_event* events, int maxevents, int timeout);
+int epoll_wait(int epfd, struct epoll_event *events, int maxevents,
+	       int timeout);
 
 /*
 Function:    int epoll_close(int epfd)
@@ -105,4 +102,3 @@ Description: This function does necessary cleanup for the epoll library.
 void epoll_cleanup();
 
 #endif /* EPOLL_H */
-

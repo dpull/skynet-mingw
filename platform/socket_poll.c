@@ -30,23 +30,23 @@ THE SOFTWARE.
 #include <conio.h>
 #include <errno.h>
 
-bool 
-sp_invalid(int efd) {
+bool sp_invalid(int efd)
+{
 	return efd == -1;
 }
 
-int
-sp_create() {
+int sp_create()
+{
 	return epoll_create(1024);
 }
 
-void
-sp_release(int efd) {
+void sp_release(int efd)
+{
 	closesocket(efd);
 }
 
-int 
-sp_add(int efd, int sock, void *ud) {
+int sp_add(int efd, int sock, void *ud)
+{
 	struct epoll_event ev;
 	ev.events = EPOLLIN;
 	ev.data.ptr = ud;
@@ -56,13 +56,13 @@ sp_add(int efd, int sock, void *ud) {
 	return 0;
 }
 
-void 
-sp_del(int efd, int sock) {
-	epoll_ctl(efd, EPOLL_CTL_DEL, sock , NULL);
+void sp_del(int efd, int sock)
+{
+	epoll_ctl(efd, EPOLL_CTL_DEL, sock, NULL);
 }
 
-int
-sp_enable(int efd, int sock, void *ud, bool read_enable, bool write_enable) {
+int sp_enable(int efd, int sock, void *ud, bool read_enable, bool write_enable)
+{
 	struct epoll_event ev;
 	ev.events = (read_enable ? EPOLLIN : 0) | (write_enable ? EPOLLOUT : 0);
 	ev.data.ptr = ud;
@@ -72,21 +72,21 @@ sp_enable(int efd, int sock, void *ud, bool read_enable, bool write_enable) {
 	return 0;
 }
 
-void 
-sp_write(int efd, int sock, void *ud, bool enable) {
+void sp_write(int efd, int sock, void *ud, bool enable)
+{
 	struct epoll_event ev;
 	ev.events = EPOLLIN | (enable ? EPOLLOUT : 0);
 	ev.data.ptr = ud;
 	epoll_ctl(efd, EPOLL_CTL_MOD, sock, &ev);
 }
 
-int 
-sp_wait(int efd, struct event *e, int max) {
+int sp_wait(int efd, struct event *e, int max)
+{
 	assert(max <= 1024);
 	struct epoll_event ev[1024];
-	int n = epoll_wait(efd , ev, max, -1);
+	int n = epoll_wait(efd, ev, max, -1);
 	int i;
-	for (i=0; i<n;i++) {
+	for (i = 0; i < n; i++) {
 		e[i].s = ev[i].data.ptr;
 		unsigned flag = ev[i].events;
 		e[i].write = (flag & EPOLLOUT) != 0;
@@ -98,8 +98,8 @@ sp_wait(int efd, struct event *e, int max) {
 	return n;
 }
 
-void
-sp_nonblocking(int fd) {
+void sp_nonblocking(int fd)
+{
 	u_long ul = 1;
 	ioctlsocket(fd, FIONBIO, &ul);
 }
