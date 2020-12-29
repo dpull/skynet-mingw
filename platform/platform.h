@@ -25,6 +25,8 @@ int sigaction(int sig, const struct sigaction *act, struct sigaction *oact);
 
 char *strsep(char **stringp, const char *delim);
 
+struct tm *localtime_r(const time_t *timer, struct tm *buf);
+
 enum { CLOCK_THREAD_CPUTIME_ID, CLOCK_REALTIME, CLOCK_MONOTONIC };
 #define clock_gettime clock_gettime_platform
 int clock_gettime_platform(int what, struct timespec *ti);

@@ -70,6 +70,15 @@ char *strsep(char **stringp, const char *delim)
 	/* NOTREACHED */
 }
 
+struct tm *localtime_r(const time_t *timer, struct tm *buf)
+{
+	struct tm *tm = localtime(timer);
+	if (!tm)
+		return NULL;
+	memcpy(buf, tm, sizeof(*tm);
+	return buf;
+}
+
 int sigfillset(sigset_t *set)
 {
 	/*Not implemented*/
