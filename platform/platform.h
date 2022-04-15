@@ -3,6 +3,7 @@
 
 #include "sys/socket.h"
 #include <unistd.h>
+#include <stdint.h>
 #include <stdbool.h>
 #include <time.h>
 
