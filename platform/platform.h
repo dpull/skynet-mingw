@@ -53,7 +53,6 @@ int fcntl(int fd, int cmd, long arg);
 #endif
 
 typedef int poll_fd;
-typedef unsigned __int64  uintptr_t;
 
 /*skynet/skynet-src/socket_poll.h*/
 struct event {
