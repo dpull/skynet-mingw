@@ -11,10 +11,6 @@ build_script:
 
     mv lua-5.4.4 skynet/3rd/lua
 
-    tree skynet/3rd/lua
-
-    cat skynet/3rd/lua/Makefile
-
     mklink /j 3rd skynet\3rd
 
     mklink /j lualib-src skynet\lualib-src
