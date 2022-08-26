@@ -3,7 +3,7 @@ build_script:
 - cmd: >-
     git submodule update --init --recursive
 
-    ./prepare.sh
+    sh prepare.sh
 
     echo %PATH%
 
