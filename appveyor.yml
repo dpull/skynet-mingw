@@ -3,31 +3,7 @@ build_script:
 - cmd: >-
     git submodule update --init --recursive
 
-    curl https://www.lua.org/ftp/lua-5.4.4.tar.gz -o lua-5.4.4.tar.gz
-
-    tar -zxvf lua-5.4.4.tar.gz
-
-    rm -rf skynet/3rd/lua
-
-    mv lua-5.4.4 skynet/3rd/lua
-
-    mklink /j 3rd skynet\3rd
-
-    mklink /j lualib-src skynet\lualib-src
-
-    mklink /j service-src skynet\service-src
-
-    mklink /j skynet-src skynet\skynet-src
-
-
-    mklink /j lualib skynet\lualib
-
-    mklink /j service skynet\service
-
-    mklink /j test skynet\test
-
-    mklink /j examples skynet\examples
-
+    ./prepare.sh
 
     echo %PATH%
 
