@@ -10,7 +10,7 @@ SKYNET_BUILD_PATH ?= .
 # lua
 LUA_STATICLIB := 3rd/lua/liblua.a
 LUA_LIB ?= $(LUA_STATICLIB)
-LUA_INC ?= 3rd/lua
+LUA_INC ?= 3rd/lua/src
 
 PLATFORM_INC ?= platform
 
@@ -76,7 +76,7 @@ $(SKYNET_BUILD_PATH)/skynet.exe : $(foreach v, $(SKYNET_EXE_SRC), skynet-src/$(v
 
 # lua
 $(LUA_STATICLIB) :
-	cd 3rd/lua && $(MAKE) CC='$(CC)'  $(PLAT)  && ls src && cd - && cp -f $(LUA_INC)/lua54.dll $(SKYNET_BUILD_PATH)/lua54.dll
+	cd 3rd/lua && $(MAKE) CC='$(CC)' $(PLAT) && cd - && cp -f $(LUA_INC)/lua54.dll $(SKYNET_BUILD_PATH)/lua54.dll
 
 $(LUA_CLIB_PATH) :
 	mkdir $(LUA_CLIB_PATH)
