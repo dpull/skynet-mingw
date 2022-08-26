@@ -76,7 +76,7 @@ $(SKYNET_BUILD_PATH)/skynet.exe : $(foreach v, $(SKYNET_EXE_SRC), skynet-src/$(v
 
 # lua
 $(LUA_STATICLIB) :
-	cd 3rd/lua && $(MAKE) CC='$(CC) -D__STDC_NO_ATOMICS__' $(PLAT)  && cd - && cp -f $(LUA_INC)/lua54.dll $(SKYNET_BUILD_PATH)/lua54.dll
+	cd 3rd/lua && $(MAKE) CC='$(CC) -D__STDC_NO_ATOMICS__' && cd - && cp -f $(LUA_INC)/lua54.dll $(SKYNET_BUILD_PATH)/lua54.dll
 
 $(LUA_CLIB_PATH) :
 	mkdir $(LUA_CLIB_PATH)
