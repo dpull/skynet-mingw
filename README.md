@@ -62,4 +62,4 @@ stack traceback:
 ```
 
 ## 相关文档
-[开发笔记](http://www.dpull.com/blog/2015-11-08-skynet_mingw) 
+[开发笔记](https://blog.dpull.com/post/2015-11-08-skynet_mingw) 
