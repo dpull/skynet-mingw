@@ -1,6 +1,6 @@
 # Warning
 
-暂时编译不过, 因为[skynet使用了未发布的lua特性](https://github.com/cloudwu/skynet/issues/1686) 
+暂时编译不过, 因为[skynet使用了未发布的lua特性](https://github.com/cloudwu/skynet/issues/1686), 在lua正式发布前, 不推荐使用skynet1.6
 
 # 关于skynet-mingw [![Build status](https://ci.appveyor.com/api/projects/status/9j45lldyxmfdau3r?svg=true)](https://ci.appveyor.com/project/dpull/skynet-mingw)
 
