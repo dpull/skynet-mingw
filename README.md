@@ -1,3 +1,7 @@
+# Warning
+
+暂时编译不过, 因为[skynet使用了未发布的lua特性](https://github.com/cloudwu/skynet/issues/1686) 
+
 # 关于skynet-mingw [![Build status](https://ci.appveyor.com/api/projects/status/9j45lldyxmfdau3r?svg=true)](https://ci.appveyor.com/project/dpull/skynet-mingw)
 
 [skynet-mingw](https://github.com/dpull/skynet-mingw) 是[skynet](https://github.com/cloudwu/skynet)的windows平台的实现。其主要特点是：
