@@ -105,4 +105,6 @@ int recvfrom_extend_voidptr(SOCKET s, void *buf, int len, int flags,
 
 __declspec(dllimport) int __stdcall gethostname(char *buffer, int len);
 
+#define lua_closethread(L, from) lua_resetthread(L)
+
 #endif
